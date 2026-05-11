@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "CampaignBrief",
+  "type": "object",
+  "required": ["id", "target_url", "categories", "intensity", "max_cases", "budget_usd"],
+  "properties": {
+    "id": {"type": "string"},
+    "target_url": {"type": "string", "format": "uri"},
+    "categories": {"type": "array", "items": {"type": "string"}},
+    "intensity": {"enum": ["smoke", "scheduled", "deep"]},
+    "max_cases": {"type": "integer", "minimum": 1},
+    "budget_usd": {"type": "number", "minimum": 0}
+  }
+}
+

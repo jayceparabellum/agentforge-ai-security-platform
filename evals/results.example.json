@@ -1,0 +1,8 @@
+{
+  "target": "https://openemr-js46.onrender.com",
+  "cadence": "weekly",
+  "categories_required": 3,
+  "note": "Run `python -m agentforge.run_campaign --intensity scheduled` to generate live results in SQLite and markdown reports.",
+  "expected_initial_outcome": "If TARGET_CHAT_PATH is not yet the deployed Co-Pilot API route, cases are recorded as partial integration findings."
+}
+

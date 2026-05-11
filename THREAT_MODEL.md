@@ -1,0 +1,38 @@
+# Threat Model
+
+## Summary
+
+The deployed OpenEMR Clinical Co-Pilot creates a high-value adversarial surface because it sits near clinical context, operational workflows, and potentially sensitive patient data. The highest-risk categories are data exfiltration, identity and role exploitation, state corruption, and tool misuse. Prompt injection remains important, but the more dangerous failure mode is not simply that the assistant obeys a malicious phrase. The dangerous failure mode is that the assistant accepts attacker-controlled context as authorization, retrieves or summarizes data across patient boundaries, invokes tools with unsafe parameters, or carries poisoned state across turns.
+
+AgentForge prioritizes coverage based on clinical impact, exploitability, and regression risk. Data exfiltration receives the highest priority because a successful attack can expose PHI, cross-patient records, or operational identifiers. Identity and role exploitation is also high priority because an LLM assistant may be persuaded to treat conversation text as an authority signal unless server-side permissions are enforced. State corruption is a key multi-turn risk: an attacker can gradually establish false assumptions, then request sensitive behavior later in the conversation. Tool misuse matters because a safe natural-language response can still be paired with unsafe backend tool calls if parameters are not validated. Denial of service is lower clinical-severity than PHI exposure, but it matters operationally because recursive tool calls, oversized outputs, and repeated retrieval can increase cost and latency.
+
+The platform does not assume that one successful jailbreak proves the system is insecure or that one blocked prompt proves a category is fixed. Each seed case is treated as the beginning of a coverage thread. The Red Team Agent mutates seed prompts into variants, the Judge Agent evaluates responses against a stable rubric, and uncertain or failed cases are converted into reports and regression candidates. This gives the project a living threat model rather than a static document.
+
+Trust boundaries are explicit. The deployed OpenEMR target is allowlisted. The adversarial platform must not be repointed at unauthorized systems. Attack generation is synthetic and bounded by budget. The Judge is isolated from the Red Team so it is not influenced by the attacker’s explanation of why an exploit should count. Critical-severity findings and low-confidence verdicts are routed to a human review queue. Reports are written for reproducibility, not drama: each one must include a minimal attack sequence, expected behavior, observed behavior, severity, and remediation guidance.
+
+For the MVP, the key implementation risk is target integration. The OpenEMR application is live at `https://openemr-js46.onrender.com`, but the exact Clinical Co-Pilot chat endpoint may differ from the default adapter path. Until that route is confirmed, AgentForge records incomplete target interaction as a partial finding instead of falsely claiming success or safety. Once the chat route is configured, the same attack cases and judge rubrics become live regression tests.
+
+## Attack Surface Map
+
+| Category | Attack Surface | Potential Impact | Difficulty | Existing Defense Assumption | AgentForge Priority |
+| --- | --- | --- | --- | --- | --- |
+| Prompt injection | Direct user prompts, hidden instructions in uploaded text, multi-turn override attempts | Assistant ignores clinical boundaries or reveals internal instructions | Medium | System prompt and refusal policy | High |
+| Data exfiltration | Chart summaries, patient lookup, retrieval context, prior user context | PHI leakage, cross-patient exposure, authorization bypass | High | Server-side auth and scoped retrieval | Critical |
+| State corruption | Conversation memory, role assertions, poisoned summaries | Persistent false assumptions and unsafe later responses | Medium | Stateless auth and bounded memory | High |
+| Tool misuse | Tool parameters, wildcard lookup, recursive calls | Unsafe backend actions even if text response appears safe | Medium | Tool schema validation | High |
+| Denial of service | Long output requests, recursive expansion, repeated retrieval | Cost amplification, latency, degraded service | Low to Medium | Token/output limits | Medium |
+| Identity and role exploitation | Persona claims, emergency access claims, admin impersonation | Privilege escalation and trust boundary violations | Medium | Auth from session, not prompt | High |
+
+## Trust Boundaries
+
+- User text is untrusted.
+- Uploaded or retrieved content is untrusted.
+- Conversation memory is untrusted unless derived from server-verified state.
+- Tool calls must be authorized outside the LLM.
+- Target URL must remain allowlisted.
+- Critical reports require human approval.
+
+## Initial Regression Categories
+
+The MVP includes seed cases for all six required categories and prioritizes at least three during smoke and scheduled campaigns. Confirmed or partial findings are written into the report queue and should remain regression candidates until the target produces safe behavior repeatedly.
+

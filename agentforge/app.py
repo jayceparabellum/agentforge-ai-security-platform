@@ -1,0 +1,110 @@
+from __future__ import annotations
+
+from fastapi import BackgroundTasks, FastAPI
+from fastapi.responses import HTMLResponse
+
+from agentforge.campaign import run_campaign
+from agentforge.config import get_settings
+from agentforge.storage import fetch_dashboard
+from agentforge.target import TargetClient
+
+app = FastAPI(title="AgentForge AI Security Platform", version="0.1.0")
+
+
+@app.get("/health")
+async def health() -> dict:
+    settings = get_settings()
+    target = TargetClient(settings)
+    target_health = await target.health()
+    return {"status": "ok", "target": target_health}
+
+
+@app.get("/api/dashboard")
+def dashboard_api() -> dict:
+    return fetch_dashboard()
+
+
+@app.post("/api/campaigns/run")
+async def run_campaign_endpoint(intensity: str = "smoke") -> dict:
+    return await run_campaign(intensity=intensity)
+
+
+@app.post("/api/campaigns/schedule-trigger")
+async def schedule_trigger(background_tasks: BackgroundTasks) -> dict:
+    background_tasks.add_task(run_campaign, "scheduled")
+    return {"queued": True, "cadence": get_settings().agentforge_campaign_cadence}
+
+
+@app.get("/", response_class=HTMLResponse)
+def index() -> str:
+    data = fetch_dashboard()
+    reports = "".join(
+        f"<tr><td>{row['id']}</td><td>{row['severity']}</td><td>{row['status']}</td><td>{row['title']}</td></tr>"
+        for row in data["reports"]
+    ) or "<tr><td colspan='4'>No reports yet. Run a campaign to populate review findings.</td></tr>"
+    events = "".join(
+        f"<li><strong>{row['agent']}</strong> {row['action']} <code>{row['campaign_id']}</code></li>"
+        for row in data["events"][:10]
+    ) or "<li>No agent events recorded yet.</li>"
+    categories = "".join(
+        f"<div class='metric'><span>{category.replace('_', ' ')}</span><strong>{count}</strong></div>"
+        for category, count in data["category_counts"].items()
+    ) or "<div class='metric'><span>Coverage</span><strong>0</strong></div>"
+    return f"""
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AgentForge</title>
+  <style>
+    :root {{ color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif; }}
+    body {{ margin: 0; background: #f6f7f9; color: #18202a; }}
+    header {{ padding: 28px 36px; background: #111827; color: white; }}
+    h1 {{ margin: 0; font-size: 28px; letter-spacing: 0; }}
+    header p {{ margin: 8px 0 0; color: #cbd5e1; max-width: 880px; }}
+    main {{ padding: 28px 36px; display: grid; gap: 22px; }}
+    section {{ background: white; border: 1px solid #dde3ea; border-radius: 8px; padding: 20px; }}
+    .grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }}
+    .metric {{ border: 1px solid #e3e8ef; border-radius: 8px; padding: 14px; background: #fbfcfd; }}
+    .metric span {{ display: block; color: #526070; text-transform: capitalize; font-size: 13px; }}
+    .metric strong {{ display: block; margin-top: 6px; font-size: 24px; }}
+    table {{ width: 100%; border-collapse: collapse; }}
+    th, td {{ text-align: left; padding: 10px 8px; border-bottom: 1px solid #e5e7eb; font-size: 14px; }}
+    button {{ background: #2563eb; color: white; border: 0; border-radius: 6px; padding: 10px 14px; cursor: pointer; }}
+    code {{ background: #eef2f7; padding: 2px 5px; border-radius: 4px; }}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>AgentForge</h1>
+    <p>Multi-agent adversarial evaluation platform for the deployed OpenEMR Clinical Co-Pilot target.</p>
+  </header>
+  <main>
+    <section>
+      <h2>Campaign Controls</h2>
+      <p>Target: <code>{get_settings().target_base_url}</code> | Cadence: <code>{get_settings().agentforge_campaign_cadence}</code> | Budget: <code>${get_settings().campaign_budget_usd}</code></p>
+      <button onclick="fetch('/api/campaigns/run?intensity=smoke', {{method:'POST'}}).then(() => location.reload())">Run Smoke Campaign</button>
+    </section>
+    <section>
+      <h2>Coverage</h2>
+      <div class="grid">
+        <div class="metric"><span>Pass</span><strong>{data['pass_count']}</strong></div>
+        <div class="metric"><span>Fail</span><strong>{data['fail_count']}</strong></div>
+        <div class="metric"><span>Partial</span><strong>{data['partial_count']}</strong></div>
+        <div class="metric"><span>Estimated Cost</span><strong>${data['estimated_cost_usd']}</strong></div>
+        {categories}
+      </div>
+    </section>
+    <section>
+      <h2>Review Queue</h2>
+      <table><thead><tr><th>ID</th><th>Severity</th><th>Status</th><th>Title</th></tr></thead><tbody>{reports}</tbody></table>
+    </section>
+    <section>
+      <h2>Agent Trace</h2>
+      <ul>{events}</ul>
+    </section>
+  </main>
+</body>
+</html>
+"""
