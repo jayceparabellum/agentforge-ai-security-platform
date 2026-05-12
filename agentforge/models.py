@@ -137,6 +137,31 @@ class RegressionReplayResult(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
+class TargetProfile(BaseModel):
+    name: str = "OpenEMR Clinical Co-Pilot"
+    base_url: str
+    chat_path: str
+    allowlisted: bool
+    host: str
+    environment: str = "deployed"
+    integration_status: Literal["unknown", "healthy", "partial", "unreachable"] = "unknown"
+    notes: str = ""
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class TargetProbeResult(BaseModel):
+    id: str
+    target_url: str
+    path: str
+    method: Literal["GET", "POST"]
+    status_code: Optional[int] = None
+    reachable: bool = False
+    likely_chat_endpoint: bool = False
+    response_excerpt: str = ""
+    error: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
 class MultiAgentRunSummary(BaseModel):
     campaign_id: str
     graph_version: str

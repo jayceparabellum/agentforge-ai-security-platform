@@ -139,3 +139,31 @@ python -m agentforge.run_layer4 regression --intensity smoke
 MVP substitution:
 
 - Fuzzing is deterministic string transformation rather than LLM-driven mutation. This keeps replayability high and cost near zero.
+
+## Layer 5: Target System
+
+Status: implemented for MVP.
+
+Current behavior:
+
+- The target client enforces `TARGET_ALLOWLIST` before health checks, probes, campaign payloads, or regression replay traffic.
+- The OpenEMR target profile is persisted in `target_profiles`.
+- Endpoint probe evidence is persisted in `target_probe_results`.
+- The dashboard has a Layer 5 Target System panel with profile and endpoint probe summaries.
+- Render config includes `agentforge-target-probe` as a weekly pre-campaign target contract check.
+- The current deployed OpenEMR base URL is reachable, but the Clinical Co-Pilot chat endpoint is still unconfirmed, so the integration status is expected to report `partial` until `TARGET_CHAT_PATH` is corrected.
+
+APIs:
+
+- GET /api/target
+- POST /api/target/probe
+
+CLI:
+
+```bash
+python -m agentforge.run_target_probe
+```
+
+MVP substitution:
+
+- Layer 5 uses lightweight endpoint probing rather than authenticated OpenEMR workflow automation. This keeps the probe benign and low-cost while making the target integration state visible before campaigns spend tokens.

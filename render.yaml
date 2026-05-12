@@ -67,3 +67,17 @@ services:
         value: https://openemr-js46.onrender.com
       - key: CAMPAIGN_BUDGET_USD
         value: "2.50"
+
+  - type: cron
+    name: agentforge-target-probe
+    env: docker
+    plan: starter
+    schedule: "30 5 * * 1"
+    dockerCommand: python -m agentforge.run_target_probe
+    envVars:
+      - key: TARGET_BASE_URL
+        value: https://openemr-js46.onrender.com
+      - key: TARGET_ALLOWLIST
+        value: https://openemr-js46.onrender.com
+      - key: TARGET_CHAT_PATH
+        value: /api/copilot/chat

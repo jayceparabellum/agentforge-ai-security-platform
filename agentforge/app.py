@@ -11,6 +11,7 @@ from agentforge.storage import (
     fetch_agent_transitions,
     fetch_dashboard,
     fetch_layer4_state,
+    fetch_target_state,
     fetch_threat_intel_state,
     fetch_token_budget_ledger,
     fetch_vulnerability_db,
@@ -26,6 +27,16 @@ async def health() -> dict:
     target = TargetClient(settings)
     target_health = await target.health()
     return {"status": "ok", "target": target_health}
+
+
+@app.get("/api/target")
+def target_state() -> dict:
+    return fetch_target_state()
+
+
+@app.post("/api/target/probe")
+async def target_probe() -> dict:
+    return await TargetClient(get_settings()).probe()
 
 
 @app.get("/api/dashboard")
@@ -132,6 +143,14 @@ def index() -> str:
         f"<tr><td>{row['status']}</td><td>{row['count']}</td></tr>"
         for row in data["regression_summary"]
     ) or "<tr><td colspan='2'>No regression replay results yet.</td></tr>"
+    target_profile_rows = "".join(
+        f"<tr><td>{row['name']}</td><td>{row['base_url']}</td><td>{row['chat_path']}</td><td>{row['integration_status']}</td><td>{row['notes']}</td></tr>"
+        for row in data["target_profiles"]
+    ) or "<tr><td colspan='5'>No target profile recorded yet. Run a target probe.</td></tr>"
+    target_probe_rows = "".join(
+        f"<tr><td>{row['method']}</td><td>{row['path']}</td><td>{row['last_status_code']}</td><td>{bool(row['reachable'])}</td><td>{bool(row['likely_chat_endpoint'])}</td></tr>"
+        for row in data["target_probe_summary"]
+    ) or "<tr><td colspan='5'>No target probes recorded yet.</td></tr>"
     return f"""
 <!doctype html>
 <html lang="en">
@@ -170,6 +189,13 @@ def index() -> str:
       <button onclick="fetch('/api/threat-intel/refresh', {{method:'POST'}}).then(() => location.reload())">Refresh Threat Intel</button>
       <button onclick="fetch('/api/layer4/fuzz', {{method:'POST'}}).then(() => location.reload())">Run Fuzzer</button>
       <button onclick="fetch('/api/layer4/regression', {{method:'POST'}}).then(() => location.reload())">Replay Regressions</button>
+      <button onclick="fetch('/api/target/probe', {{method:'POST'}}).then(() => location.reload())">Probe Target</button>
+    </section>
+    <section>
+      <h2>Layer 5 Target System</h2>
+      <table><thead><tr><th>Name</th><th>Base URL</th><th>Chat Path</th><th>Status</th><th>Notes</th></tr></thead><tbody>{target_profile_rows}</tbody></table>
+      <h3>Endpoint Probes</h3>
+      <table><thead><tr><th>Method</th><th>Path</th><th>Status</th><th>Reachable</th><th>Likely Chat</th></tr></thead><tbody>{target_probe_rows}</tbody></table>
     </section>
     <section>
       <h2>Coverage</h2>

@@ -13,6 +13,8 @@ from agentforge.models import (
     AttackResult,
     FuzzCase,
     RegressionReplayResult,
+    TargetProbeResult,
+    TargetProfile,
     ThreatFeedItem,
     TokenBudgetEntry,
     Verdict,
@@ -130,6 +132,29 @@ CREATE TABLE IF NOT EXISTS regression_replay_results (
   target_status_code INTEGER,
   transport_error TEXT,
   response_excerpt TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS target_profiles (
+  name TEXT PRIMARY KEY,
+  base_url TEXT NOT NULL,
+  chat_path TEXT NOT NULL,
+  allowlisted INTEGER NOT NULL,
+  host TEXT NOT NULL,
+  environment TEXT NOT NULL,
+  integration_status TEXT NOT NULL,
+  notes TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS target_probe_results (
+  id TEXT PRIMARY KEY,
+  target_url TEXT NOT NULL,
+  path TEXT NOT NULL,
+  method TEXT NOT NULL,
+  status_code INTEGER,
+  reachable INTEGER NOT NULL,
+  likely_chat_endpoint INTEGER NOT NULL,
+  response_excerpt TEXT NOT NULL,
+  error TEXT,
   created_at TEXT NOT NULL
 );
 """
@@ -354,6 +379,78 @@ def fetch_layer4_state(limit: int = 100) -> dict:
         "fuzz_summary": [dict(row) for row in fuzz_summary],
         "regression_results": [dict(row) for row in replay_rows],
         "regression_summary": [dict(row) for row in replay_summary],
+    }
+
+
+def save_target_profile(profile: TargetProfile) -> None:
+    with connect() as conn:
+        conn.execute(
+            """
+            INSERT OR REPLACE INTO target_profiles
+            (name, base_url, chat_path, allowlisted, host, environment, integration_status, notes, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                profile.name,
+                profile.base_url,
+                profile.chat_path,
+                int(profile.allowlisted),
+                profile.host,
+                profile.environment,
+                profile.integration_status,
+                profile.notes,
+                profile.updated_at.isoformat(),
+            ),
+        )
+
+
+def save_target_probe_results(results: List[TargetProbeResult]) -> None:
+    with connect() as conn:
+        for result in results:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO target_probe_results
+                (id, target_url, path, method, status_code, reachable, likely_chat_endpoint,
+                 response_excerpt, error, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    result.id,
+                    result.target_url,
+                    result.path,
+                    result.method,
+                    result.status_code,
+                    int(result.reachable),
+                    int(result.likely_chat_endpoint),
+                    result.response_excerpt,
+                    result.error,
+                    result.created_at.isoformat(),
+                ),
+            )
+
+
+def fetch_target_state(limit: int = 50) -> dict:
+    with connect() as conn:
+        profiles = conn.execute("SELECT * FROM target_profiles ORDER BY updated_at DESC").fetchall()
+        probes = conn.execute("SELECT * FROM target_probe_results ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()
+        summary = conn.execute(
+            """
+            SELECT method,
+                   path,
+                   COUNT(*) AS count,
+                   MAX(status_code) AS last_status_code,
+                   MAX(reachable) AS reachable,
+                   MAX(likely_chat_endpoint) AS likely_chat_endpoint,
+                   MAX(created_at) AS last_checked_at
+            FROM target_probe_results
+            GROUP BY method, path
+            ORDER BY likely_chat_endpoint DESC, reachable DESC, path
+            """
+        ).fetchall()
+    return {
+        "profiles": [dict(row) for row in profiles],
+        "probes": [dict(row) for row in probes],
+        "summary": [dict(row) for row in summary],
     }
 
 
@@ -593,6 +690,21 @@ def fetch_dashboard() -> dict:
         replay_summary = conn.execute(
             "SELECT status, COUNT(*) AS count FROM regression_replay_results GROUP BY status ORDER BY status"
         ).fetchall()
+        target_profiles = conn.execute("SELECT * FROM target_profiles ORDER BY updated_at DESC LIMIT 3").fetchall()
+        target_probe_summary = conn.execute(
+            """
+            SELECT method,
+                   path,
+                   MAX(status_code) AS last_status_code,
+                   MAX(reachable) AS reachable,
+                   MAX(likely_chat_endpoint) AS likely_chat_endpoint,
+                   MAX(created_at) AS last_checked_at
+            FROM target_probe_results
+            GROUP BY method, path
+            ORDER BY likely_chat_endpoint DESC, reachable DESC, path
+            LIMIT 12
+            """
+        ).fetchall()
         cost = conn.execute("SELECT COALESCE(SUM(cost_estimate_usd), 0) AS cost FROM attack_results").fetchone()["cost"]
         last = conn.execute("SELECT campaign_id FROM events ORDER BY id DESC LIMIT 1").fetchone()
     verdict_counts = {row["verdict"]: row["count"] for row in verdict_rows}
@@ -621,6 +733,8 @@ def fetch_dashboard() -> dict:
         "agent_transitions": [dict(row) for row in transition_rows],
         "fuzz_summary": [dict(row) for row in fuzz_summary],
         "regression_summary": [dict(row) for row in replay_summary],
+        "target_profiles": [dict(row) for row in target_profiles],
+        "target_probe_summary": [dict(row) for row in target_probe_summary],
     }
 
 

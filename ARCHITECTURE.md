@@ -34,6 +34,7 @@ One MVP limitation is intentionally visible: the OpenEMR application is reachabl
 | Layer 2 behavior | Runs campaigns through `MultiAgentCore` graph version `layer2-langgraph-provider-routes-v2` and records typed transitions with provider/data-hop metadata |
 | Layer 3 behavior | Persists vulnerability DB, coverage map, and token budget ledger in SQLite shared state |
 | Layer 4 behavior | Deterministic fuzzers generate prompt variants and regression replay reruns confirmed/partial findings |
+| Layer 5 behavior | Maintains the allowlisted OpenEMR target profile, probes likely endpoint paths, and records whether the deployed target integration is healthy, partial, or unreachable |
 | Known integration gap | Confirm final `TARGET_CHAT_PATH` for the Clinical Co-Pilot chat endpoint |
 
 ## System Diagram
@@ -65,6 +66,7 @@ One MVP limitation is intentionally visible: the OpenEMR application is reachabl
 | Token Budget Ledger | SQLite-backed `/api/budget-ledger` with per-agent estimated token and cost entries |
 | Agent transition log | SQLite-backed `/api/agent-transitions` with graph node handoffs |
 | Deterministic tooling | `agentforge/deterministic.py` with fuzzer and regression replay harness |
+| Target system layer | `agentforge/target.py` with allowlist enforcement, health checks, endpoint probing, and target profile persistence |
 | Seed evals | `agentforge/data/seed_cases.json` and `evals/seed_cases.json` |
 | Threat feeds | `agentforge/data/threat_feeds/*.json` snapshots |
 | Generated threat cases | `agentforge/data/generated_threat_cases.json` |
@@ -230,6 +232,37 @@ schedule: "0 7 * * 1"
 
 That runs after the weekly campaign window and provides a deterministic signal about whether previously observed issues still reproduce.
 
+## Layer 5 Target System
+
+Layer 5 is now represented in code as an explicit target-system layer rather than an implicit URL string. The target client enforces `TARGET_ALLOWLIST` before any health check, probe, campaign, or replay sends traffic. This keeps AgentForge scoped to the authorized deployed OpenEMR application:
+
+```text
+https://openemr-js46.onrender.com
+```
+
+The target layer persists two kinds of shared state:
+
+- `target_profiles`: base URL, configured chat path, host, allowlist status, integration status, notes, and last update time.
+- `target_probe_results`: endpoint probe attempts, method, path, status code, reachability, likely chat-endpoint signal, response excerpt, error, and timestamp.
+
+The target probe is intentionally lightweight and low-cost. It performs GET checks against known OpenEMR/API surface paths and benign POST probes against likely Clinical Co-Pilot chat paths. It never sends PHI. Its job is to answer a deployment question before the Red Team spends tokens: is the target reachable, and does any candidate chat endpoint appear to accept the AgentForge message contract?
+
+Layer 5 is exposed through:
+
+```text
+GET /api/target
+POST /api/target/probe
+python -m agentforge.run_target_probe
+```
+
+Render includes a weekly `agentforge-target-probe` job:
+
+```yaml
+schedule: "30 5 * * 1"
+```
+
+This runs before the weekly campaign. If the base OpenEMR URL is reachable but no chat endpoint is confirmed, the integration is marked `partial`. That mirrors the current known deployment state and prevents the dashboard from pretending that a missing endpoint is the same thing as a safe target response.
+
 ## Shared State Data Layer
 
 Layer 3 is implemented as a SQLite shared-state data layer. It is intentionally simple for MVP deployment, but the table boundaries match the production architecture and can be moved to Postgres without changing agent responsibilities.
@@ -246,6 +279,8 @@ The layer contains:
 - `agent_transitions`: Layer 2 graph handoff trace.
 - `fuzz_cases`: deterministic Layer 4 prompt/payload variants.
 - `regression_replay_results`: deterministic replay outcomes for confirmed or partial findings.
+- `target_profiles`: Layer 5 target registry and integration status.
+- `target_probe_results`: Layer 5 endpoint reachability and candidate chat-path evidence.
 
 The Vulnerability DB is exposed at:
 

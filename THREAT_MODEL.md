@@ -14,6 +14,8 @@ Provider routing is also treated as a trust boundary. The Red Team path uses Ope
 
 Layer 4 adds deterministic pressure to the threat model. Fuzzing checks whether a defense only blocks a narrow wording of an attack, while regression replay checks whether previously observed partial or failed cases still reproduce after target changes. This is intentionally deterministic rather than agentic so replay results can be compared across runs.
 
+Layer 5 makes the deployed target itself part of the security model. AgentForge stores an allowlisted OpenEMR target profile, probes the base application and likely Clinical Co-Pilot API paths, and records whether the integration is `healthy`, `partial`, or `unreachable`. This keeps campaign results honest: a missing or changed endpoint is not treated as a pass, and the system does not send adversarial traffic to any URL outside `TARGET_ALLOWLIST`.
+
 Trust boundaries are explicit. The deployed OpenEMR target is allowlisted. The adversarial platform must not be repointed at unauthorized systems. Attack generation is synthetic and bounded by budget. The Judge is isolated from the Red Team so it is not influenced by the attacker’s explanation of why an exploit should count. Critical-severity findings and low-confidence verdicts are routed to a human review queue. Reports are written for reproducibility, not drama: each one must include a minimal attack sequence, expected behavior, observed behavior, severity, and remediation guidance.
 
 For the MVP, the key implementation risk is target integration. The OpenEMR application is live at `https://openemr-js46.onrender.com`, but the exact Clinical Co-Pilot chat endpoint may differ from the default adapter path. Until that route is confirmed, AgentForge records incomplete target interaction as a partial finding instead of falsely claiming success or safety. Once the chat route is configured, the same attack cases and judge rubrics become live regression tests.
@@ -36,6 +38,7 @@ For the MVP, the key implementation risk is target integration. The OpenEMR appl
 - Conversation memory is untrusted unless derived from server-verified state.
 - Tool calls must be authorized outside the LLM.
 - Target URL must remain allowlisted.
+- Target probes must remain benign and limited to the authorized OpenEMR deployment.
 - Critical reports require human approval.
 - Vulnerability and budget state are persisted in shared state so review decisions are auditable.
 

@@ -10,7 +10,7 @@ This is a separate application, not an OpenEMR fork. It runs authorized adversar
 
 - Status: MVP build complete and deployed on Render.
 - Render Blueprint ID: `exs-d81aqof7f7vs73dfgng0`.
-- Render services deployed: `agentforge-ai-security-platform` and `agentforge-weekly-campaign`.
+- Render services deployed: `agentforge-ai-security-platform`, `agentforge-weekly-campaign`, `agentforge-threat-intel-refresh`, `agentforge-regression-replay`, and `agentforge-target-probe`.
 - Deployment source: GitHub repo `jayceparabellum/agentforge-ai-security-platform`.
 - Original Gauntlet GitLab URL: `https://labs.gauntletai.com/jayceparabellum/agentforge-ai-security-platform`.
 - Target system: `https://openemr-js46.onrender.com`.
@@ -30,6 +30,7 @@ This is a separate application, not an OpenEMR fork. It runs authorized adversar
 - Runs campaigns through an explicit Layer 2 multi-agent core with typed transition logging.
 - Records Layer 2 provider routes: Red Team through OpenRouter, Judge through direct Anthropic, Documentation configurable, and local fallback through Ollama.
 - Provides Layer 4 deterministic tooling: fuzzers and regression replay.
+- Provides Layer 5 target-system profiling and endpoint probing for the deployed OpenEMR application.
 - Stores agent traces, attack results, verdicts, and report metadata in SQLite.
 - Provides a FastAPI dashboard and JSON API for reviewing findings.
 - Ships with a Dockerfile and Render Blueprint config.
@@ -90,6 +91,12 @@ python -m agentforge.run_layer4 fuzz --max-cases 12
 python -m agentforge.run_layer4 regression --intensity smoke
 ```
 
+Probe the Layer 5 target-system contract:
+
+```bash
+python -m agentforge.run_target_probe
+```
+
 ## Render Deployment
 
 Render deploys this repo through `render.yaml`.
@@ -106,6 +113,7 @@ Deployed Blueprint services:
 - `agentforge-weekly-campaign`: weekly scheduled campaign runner.
 - `agentforge-threat-intel-refresh`: scheduled threat-intelligence refresh.
 - `agentforge-regression-replay`: scheduled deterministic regression replay.
+- `agentforge-target-probe`: scheduled target availability and endpoint contract probe.
 
 Default environment:
 
@@ -140,6 +148,14 @@ Threat intelligence refresh runs on the 1st and 15th of each month:
 schedule: "0 5 1,15 * *"
 ```
 
+Target probing runs weekly before the campaign:
+
+```yaml
+schedule: "30 5 * * 1"
+```
+
+It checks the allowlisted OpenEMR base URL plus likely Clinical Co-Pilot API paths, stores the target profile and probe results, and marks the integration as `healthy`, `partial`, or `unreachable`.
+
 ## Review Workflow
 
 1. The weekly cron starts a scheduled campaign.
@@ -168,6 +184,7 @@ schedule: "0 5 1,15 * *"
 - `/api/agent-transitions`: Layer 2 graph transition log.
 - `/api/provider-routes`: Layer 2 provider/data-hop routing plan.
 - `/api/layer4`: deterministic fuzzing and regression replay state.
+- `/api/target`: Layer 5 target profile and endpoint probe state.
 
 ## Target Integration Note
 

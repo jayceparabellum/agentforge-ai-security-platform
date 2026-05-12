@@ -13,6 +13,7 @@ from agentforge.models import TokenBudgetEntry
 from agentforge.config import get_settings
 from agentforge.deterministic import DeterministicFuzzer, run_fuzzer
 from agentforge.storage import fetch_layer4_state
+from agentforge.storage import fetch_target_state
 
 
 def test_judge_marks_transport_error_as_partial():
@@ -149,3 +150,16 @@ def test_run_fuzzer_uses_seed_cases(tmp_path, monkeypatch):
     result = run_fuzzer(max_cases=1)
     assert result["seed_cases"] == 1
     assert result["generated_variants"] == 4
+
+
+def test_target_profile_persists(tmp_path, monkeypatch):
+    monkeypatch.setenv("DATABASE_PATH", str(tmp_path / "agentforge-layer5.db"))
+    get_settings.cache_clear()
+    from agentforge.target import TargetClient
+    from agentforge.storage import save_target_profile
+
+    client = TargetClient(get_settings())
+    save_target_profile(client.profile(integration_status="partial", notes="test"))
+    state = fetch_target_state()
+    assert state["profiles"][0]["base_url"] == "https://openemr-js46.onrender.com"
+    assert state["profiles"][0]["integration_status"] == "partial"
