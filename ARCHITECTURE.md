@@ -6,7 +6,7 @@ AgentForge is a separate adversarial security platform built to continuously eva
 
 The platform is designed around the core requirement from the assignment: this cannot be a static prompt list, a one-time penetration test, or a single-agent script. AgentForge separates adversarial testing into distinct agents with distinct contexts, trust levels, and outputs so the system can discover, evaluate, document, and regression-test vulnerabilities without letting one role compromise another. The currently deployed MVP has already run smoke campaigns from both the Mac mini development environment and the Render-launched application. Those campaigns reached the deployed OpenEMR target, verified that the target returned HTTP 200, exercised six attack categories, and populated the review queue with reportable findings.
 
-The architecture has five agent roles. The Threat Intelligence Agent is scheduled and mostly deterministic. It loads seed techniques from trusted sources such as OWASP LLM Top 10, MITRE ATLAS, NIST AI RMF, and NVD-style vulnerability feeds, then normalizes relevant techniques into structured attack templates. The Orchestrator Agent reads the coverage map, open findings, regression status, and budget ledger to decide what the Red Team Agent should test next. The Red Team Agent generates and mutates adversarial inputs, including multi-turn sequences, but it cannot decide whether its own attack succeeded. The Judge Agent independently evaluates the target response against versioned rubrics and returns structured verdicts. The Documentation Agent converts confirmed or uncertain findings into reproducible vulnerability reports for human review.
+The architecture has five agent roles. The Threat Intelligence Agent is scheduled and mostly deterministic. It loads seed techniques from trusted sources such as OWASP LLM Top 10, MITRE ATLAS, NIST AI RMF, NVD CVE 2.0, MITRE CVE List, CISA Known Exploited Vulnerabilities, GitHub Advisory Database, and OSV.dev, then normalizes relevant techniques into structured attack templates. The Orchestrator Agent reads the coverage map, open findings, regression status, and budget ledger to decide what the Red Team Agent should test next. The Red Team Agent generates and mutates adversarial inputs, including multi-turn sequences, but it cannot decide whether its own attack succeeded. The Judge Agent independently evaluates the target response against versioned rubrics and returns structured verdicts. The Documentation Agent converts confirmed or uncertain findings into reproducible vulnerability reports for human review.
 
 Under these agents is a deterministic regression harness. Confirmed exploits and partial findings are stored in a versioned, queryable format and replayed on future scheduled campaigns. This distinction matters: the agents can explore, but regression validation must be repeatable. A deterministic replay harness is easier to defend to a hospital CISO than a free-form agent that might change its behavior every run.
 
@@ -30,7 +30,7 @@ The deployed Clinical Co-Pilot application is reachable, and the current default
 | Campaign budget | `$2.50` default |
 | Local verification | `pytest` passed on Mac mini |
 | Live smoke behavior | Campaign controls ran and populated review findings |
-| Layer 1 behavior | Fetches OWASP LLM Top 10, MITRE ATLAS, NIST AI 600-1, and NVD CVE 2.0; normalizes external items into generated seed cases; stores feed/case/coverage state in SQLite |
+| Layer 1 behavior | Fetches OWASP LLM Top 10, MITRE ATLAS, NIST AI 600-1, NVD CVE 2.0, MITRE CVE List, CISA KEV, GitHub Advisory Database, and OSV.dev; normalizes external items into generated seed cases; stores feed/case/coverage state in SQLite |
 | Layer 2 behavior | Runs campaigns through `MultiAgentCore` graph version `layer2-langgraph-provider-routes-v2` and records typed transitions with provider/data-hop metadata |
 | Layer 3 behavior | Persists vulnerability DB, coverage map, and token budget ledger in SQLite shared state |
 | Layer 4 behavior | Deterministic fuzzers generate prompt variants and regression replay reruns confirmed/partial findings |
@@ -47,7 +47,7 @@ The deployed Clinical Co-Pilot application is reachable, and the current default
 
 | Agent | Responsibility | Inputs | Outputs | Trust Level |
 | --- | --- | --- | --- | --- |
-| Threat Intelligence Agent | Fetch, snapshot, and normalize external security techniques into seed templates | OWASP, MITRE ATLAS, NIST AI RMF, NVD CVE 2.0, local JSON seeds | Structured attack cases and coverage gaps | Low |
+| Threat Intelligence Agent | Fetch, snapshot, and normalize external security techniques into seed templates | OWASP, MITRE ATLAS, NIST AI RMF, NVD CVE 2.0, MITRE CVE List, CISA KEV, GitHub Advisory Database, OSV.dev, local JSON seeds | Structured attack cases and coverage gaps | Low |
 | Orchestrator Agent | Prioritize campaigns and enforce budget | Coverage map, open findings, cost ledger, target URL | Campaign brief | Medium |
 | Red Team Agent | Generate and mutate adversarial payloads | Campaign brief, seed cases, prior outcomes | Attack sequences | High autonomy within budget |
 | Judge Agent | Evaluate target behavior independently | Attack payload, target response, rubric | Verdict JSON | High for verdicts |
@@ -173,6 +173,10 @@ It performs four feed operations:
 - Reads the MITRE ATLAS `atlas-data` repository through the GitHub API and snapshots selected technique/case-study records.
 - Downloads and hashes the NIST AI 600-1 Generative AI Profile PDF, then maps core governance and measurement concerns into evaluation seeds.
 - Calls the NVD CVE 2.0 API with `NVD_KEYWORD_QUERY` and snapshots any matching CVE records.
+- Reads recent MITRE CVE List activity from the official CVEProject `cvelistV5` repository to capture authoritative CVE record flow.
+- Pulls CISA Known Exploited Vulnerabilities JSON to prioritize vulnerabilities that are actively exploited in the wild.
+- Pulls reviewed GitHub Advisory Database records for open-source and software supply chain vulnerability coverage.
+- Queries OSV.dev for vulnerabilities affecting representative open-source package ecosystems used by modern web applications.
 
 The normalization output is written to `agentforge/data/generated_threat_cases.json` and persisted into the shared-state SQLite layer. The shared state includes:
 

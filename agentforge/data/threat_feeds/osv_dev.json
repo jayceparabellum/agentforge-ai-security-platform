@@ -1,0 +1,92 @@
+[
+  {
+    "source": "OSV.dev",
+    "external_id": "GHSA-8h2j-cgx8-6xv7",
+    "title": "GHSA-8h2j-cgx8-6xv7 PyPI:fastapi",
+    "summary": "Open source vulnerability. Aliases:",
+    "url": "https://osv.dev/vulnerability/GHSA-8h2j-cgx8-6xv7",
+    "category": "identity_role",
+    "fetched_at": "2026-05-12T23:42:18.797116Z"
+  },
+  {
+    "source": "OSV.dev",
+    "external_id": "PYSEC-2021-100",
+    "title": "PYSEC-2021-100 PyPI:fastapi",
+    "summary": "Open source vulnerability. Aliases:",
+    "url": "https://osv.dev/vulnerability/PYSEC-2021-100",
+    "category": "identity_role",
+    "fetched_at": "2026-05-12T23:42:18.797162Z"
+  },
+  {
+    "source": "OSV.dev",
+    "external_id": "PYSEC-2024-38",
+    "title": "PYSEC-2024-38 PyPI:fastapi",
+    "summary": "Open source vulnerability. Aliases:",
+    "url": "https://osv.dev/vulnerability/PYSEC-2024-38",
+    "category": "identity_role",
+    "fetched_at": "2026-05-12T23:42:18.797186Z"
+  },
+  {
+    "source": "OSV.dev",
+    "external_id": "GHSA-5jqp-qgf6-3pvh",
+    "title": "GHSA-5jqp-qgf6-3pvh PyPI:pydantic",
+    "summary": "Open source vulnerability. Aliases:",
+    "url": "https://osv.dev/vulnerability/GHSA-5jqp-qgf6-3pvh",
+    "category": "identity_role",
+    "fetched_at": "2026-05-12T23:42:18.797211Z"
+  },
+  {
+    "source": "OSV.dev",
+    "external_id": "GHSA-mr82-8j83-vxmv",
+    "title": "GHSA-mr82-8j83-vxmv PyPI:pydantic",
+    "summary": "Open source vulnerability. Aliases:",
+    "url": "https://osv.dev/vulnerability/GHSA-mr82-8j83-vxmv",
+    "category": "identity_role",
+    "fetched_at": "2026-05-12T23:42:18.797231Z"
+  },
+  {
+    "source": "OSV.dev",
+    "external_id": "PYSEC-2021-47",
+    "title": "PYSEC-2021-47 PyPI:pydantic",
+    "summary": "Open source vulnerability. Aliases:",
+    "url": "https://osv.dev/vulnerability/PYSEC-2021-47",
+    "category": "identity_role",
+    "fetched_at": "2026-05-12T23:42:18.797251Z"
+  },
+  {
+    "source": "OSV.dev",
+    "external_id": "GHSA-h8pj-cxx2-jfg2",
+    "title": "GHSA-h8pj-cxx2-jfg2 PyPI:httpx",
+    "summary": "Open source vulnerability. Aliases:",
+    "url": "https://osv.dev/vulnerability/GHSA-h8pj-cxx2-jfg2",
+    "category": "identity_role",
+    "fetched_at": "2026-05-12T23:42:18.797273Z"
+  },
+  {
+    "source": "OSV.dev",
+    "external_id": "PYSEC-2022-183",
+    "title": "PYSEC-2022-183 PyPI:httpx",
+    "summary": "Open source vulnerability. Aliases:",
+    "url": "https://osv.dev/vulnerability/PYSEC-2022-183",
+    "category": "identity_role",
+    "fetched_at": "2026-05-12T23:42:18.797294Z"
+  },
+  {
+    "source": "OSV.dev",
+    "external_id": "GHSA-g53w-52xc-2j85",
+    "title": "GHSA-g53w-52xc-2j85 npm:react",
+    "summary": "Open source vulnerability. Aliases:",
+    "url": "https://osv.dev/vulnerability/GHSA-g53w-52xc-2j85",
+    "category": "identity_role",
+    "fetched_at": "2026-05-12T23:42:18.797316Z"
+  },
+  {
+    "source": "OSV.dev",
+    "external_id": "GHSA-hg79-j56m-fxgv",
+    "title": "GHSA-hg79-j56m-fxgv npm:react",
+    "summary": "Open source vulnerability. Aliases:",
+    "url": "https://osv.dev/vulnerability/GHSA-hg79-j56m-fxgv",
+    "category": "identity_role",
+    "fetched_at": "2026-05-12T23:42:18.797336Z"
+  }
+]

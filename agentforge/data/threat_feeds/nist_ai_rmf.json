@@ -6,7 +6,7 @@
     "summary": "NIST AI 600-1 control-oriented seed. Source digest 6e73620ab6b6.",
     "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.600-1.pdf",
     "category": "data_exfiltration",
-    "fetched_at": "2026-05-12T05:27:15.821045Z"
+    "fetched_at": "2026-05-12T23:42:14.693380Z"
   },
   {
     "source": "NIST AI RMF Generative AI Profile",
@@ -15,7 +15,7 @@
     "summary": "NIST AI 600-1 control-oriented seed. Source digest 6e73620ab6b6.",
     "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.600-1.pdf",
     "category": "prompt_injection",
-    "fetched_at": "2026-05-12T05:27:15.821045Z"
+    "fetched_at": "2026-05-12T23:42:14.693412Z"
   },
   {
     "source": "NIST AI RMF Generative AI Profile",
@@ -24,7 +24,7 @@
     "summary": "NIST AI 600-1 control-oriented seed. Source digest 6e73620ab6b6.",
     "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.600-1.pdf",
     "category": "identity_role",
-    "fetched_at": "2026-05-12T05:27:15.821045Z"
+    "fetched_at": "2026-05-12T23:42:14.693423Z"
   },
   {
     "source": "NIST AI RMF Generative AI Profile",
@@ -33,6 +33,6 @@
     "summary": "NIST AI 600-1 control-oriented seed. Source digest 6e73620ab6b6.",
     "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.600-1.pdf",
     "category": "tool_misuse",
-    "fetched_at": "2026-05-12T05:27:15.821045Z"
+    "fetched_at": "2026-05-12T23:42:14.693430Z"
   }
 ]

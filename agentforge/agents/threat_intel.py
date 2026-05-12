@@ -51,6 +51,10 @@ class ThreatIntelAgent:
             ("mitre_atlas", self._fetch_mitre_atlas),
             ("nist_ai_rmf", self._fetch_nist_ai_rmf),
             ("nvd_cve", self._fetch_nvd_cves),
+            ("mitre_cve_list", self._fetch_mitre_cve_list),
+            ("cisa_kev", self._fetch_cisa_kev),
+            ("github_advisories", self._fetch_github_advisories),
+            ("osv_dev", self._fetch_osv_dev),
         ]
         for name, fetcher in fetchers:
             try:
@@ -183,6 +187,113 @@ class ThreatIntelAgent:
             )
         return items
 
+    def _fetch_mitre_cve_list(self) -> List[ThreatFeedItem]:
+        api_url = "https://api.github.com/repos/CVEProject/cvelistV5/commits"
+        commits = self._get_json(
+            api_url,
+            params={"path": "cves", "per_page": "6"},
+        )
+        items: List[ThreatFeedItem] = []
+        if not isinstance(commits, list):
+            return items
+        for commit in commits[:6]:
+            sha = commit.get("sha", "")[:12] or "cvelist-update"
+            message = commit.get("commit", {}).get("message", "CVE List update").splitlines()[0]
+            items.append(
+                ThreatFeedItem(
+                    source="MITRE CVE List",
+                    external_id=f"CVELIST-{sha}",
+                    title=message[:120],
+                    summary=(
+                        "Recent CVE List activity from the official CVEProject cvelistV5 repository, "
+                        "used as the authoritative CVE record stream before NVD enrichment."
+                    ),
+                    url=commit.get("html_url", "https://github.com/CVEProject/cvelistV5"),
+                    category=self._category_from_text(message),
+                )
+            )
+        return items
+
+    def _fetch_cisa_kev(self) -> List[ThreatFeedItem]:
+        url = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
+        data = self._get_json(url)
+        vulnerabilities = data.get("vulnerabilities", [])[:12]
+        items: List[ThreatFeedItem] = []
+        for vuln in vulnerabilities:
+            cve_id = vuln.get("cveID", "CISA-KEV")
+            vendor = vuln.get("vendorProject", "")
+            product = vuln.get("product", "")
+            name = vuln.get("vulnerabilityName", cve_id)
+            notes = vuln.get("shortDescription") or vuln.get("requiredAction") or "Known exploited vulnerability."
+            items.append(
+                ThreatFeedItem(
+                    source="CISA Known Exploited Vulnerabilities",
+                    external_id=cve_id,
+                    title=f"{cve_id} {vendor} {product}".strip(),
+                    summary=f"{name}: {notes}"[:500],
+                    url=f"https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search={cve_id}",
+                    category=self._category_from_text(f"{name} {notes} {vendor} {product}"),
+                )
+            )
+        return items
+
+    def _fetch_github_advisories(self) -> List[ThreatFeedItem]:
+        url = "https://api.github.com/advisories"
+        data = self._get_json(url, params={"type": "reviewed", "per_page": "12", "sort": "updated"})
+        items: List[ThreatFeedItem] = []
+        if not isinstance(data, list):
+            return items
+        for advisory in data[:12]:
+            ghsa_id = advisory.get("ghsa_id") or advisory.get("cve_id") or "GHSA"
+            title = advisory.get("summary") or advisory.get("description", "")[:120] or ghsa_id
+            identifiers = advisory.get("identifiers") or []
+            cve_id = next((item.get("value") for item in identifiers if item.get("type") == "CVE"), None)
+            package = advisory.get("vulnerabilities", [{}])[0].get("package", {}) if advisory.get("vulnerabilities") else {}
+            ecosystem = package.get("ecosystem", "")
+            package_name = package.get("name", "")
+            items.append(
+                ThreatFeedItem(
+                    source="GitHub Advisory Database",
+                    external_id=cve_id or ghsa_id,
+                    title=title[:160],
+                    summary=(
+                        f"Reviewed GitHub advisory {ghsa_id}"
+                        f" for {ecosystem}:{package_name}. Severity: {advisory.get('severity', 'unknown')}."
+                    ),
+                    url=advisory.get("html_url") or f"https://github.com/advisories/{ghsa_id}",
+                    category=self._category_from_text(f"{title} {ecosystem} {package_name} {advisory.get('severity', '')}"),
+                )
+            )
+        return items
+
+    def _fetch_osv_dev(self) -> List[ThreatFeedItem]:
+        url = "https://api.osv.dev/v1/querybatch"
+        packages = [
+            {"package": {"ecosystem": "PyPI", "name": "fastapi"}},
+            {"package": {"ecosystem": "PyPI", "name": "pydantic"}},
+            {"package": {"ecosystem": "PyPI", "name": "httpx"}},
+            {"package": {"ecosystem": "npm", "name": "react"}},
+        ]
+        data = self._post_json(url, {"queries": packages})
+        items: List[ThreatFeedItem] = []
+        for package_query, result in zip(packages, data.get("results", [])):
+            package = package_query["package"]
+            for vuln in result.get("vulns", [])[:3]:
+                vuln_id = vuln.get("id", "OSV")
+                summary = vuln.get("summary") or vuln.get("details", "")[:160] or "Open source vulnerability."
+                aliases = ", ".join(vuln.get("aliases", [])[:3])
+                items.append(
+                    ThreatFeedItem(
+                        source="OSV.dev",
+                        external_id=vuln_id,
+                        title=f"{vuln_id} {package['ecosystem']}:{package['name']}",
+                        summary=f"{summary} Aliases: {aliases}".strip()[:500],
+                        url=f"https://osv.dev/vulnerability/{vuln_id}",
+                        category=self._category_from_text(f"{summary} {aliases} {package['name']}"),
+                    )
+                )
+        return items[:12]
+
     def _normalize_items(self, items: Iterable[ThreatFeedItem]) -> List[AttackCase]:
         cases = []
         for item in items:
@@ -304,6 +415,12 @@ class ThreatIntelAgent:
             response = client.get(url)
             response.raise_for_status()
             return response.text[:max_chars]
+
+    def _post_json(self, url: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        with httpx.Client(timeout=20.0, follow_redirects=True, headers={"User-Agent": "AgentForge/0.1 threat-intel"}) as client:
+            response = client.post(url, json=payload)
+            response.raise_for_status()
+            return response.json()
 
     def _extract_title(self, text: str) -> Optional[str]:
         for line in text.splitlines()[:40]:

@@ -57,6 +57,58 @@ def test_threat_intel_normalizes_external_item():
     assert cases[0].category == AttackCategory.prompt_injection
 
 
+def test_threat_intel_fetcher_roster_includes_vulnerability_databases(tmp_path, monkeypatch):
+    monkeypatch.setenv("DATABASE_PATH", str(tmp_path / "agentforge-threat-roster.db"))
+    get_settings.cache_clear()
+    agent = ThreatIntelAgent()
+    agent.data_dir = tmp_path
+    agent.feed_dir = tmp_path / "threat_feeds"
+    agent.feed_dir.mkdir()
+    monkeypatch.setattr(agent, "_fetch_owasp_llm_top_10", lambda: [])
+    monkeypatch.setattr(agent, "_fetch_mitre_atlas", lambda: [])
+    monkeypatch.setattr(agent, "_fetch_nist_ai_rmf", lambda: [])
+    monkeypatch.setattr(agent, "_fetch_nvd_cves", lambda: [])
+    monkeypatch.setattr(agent, "_fetch_mitre_cve_list", lambda: [])
+    monkeypatch.setattr(agent, "_fetch_cisa_kev", lambda: [])
+    monkeypatch.setattr(agent, "_fetch_github_advisories", lambda: [])
+    monkeypatch.setattr(agent, "_fetch_osv_dev", lambda: [])
+    result = agent.refresh()
+    expected_snapshot_names = {
+        "nvd_cve",
+        "mitre_cve_list",
+        "cisa_kev",
+        "github_advisories",
+        "osv_dev",
+    }
+    assert expected_snapshot_names.issubset(
+        {path.rsplit("/", 1)[-1].replace(".json", "") for path in result.snapshot_paths}
+    )
+
+
+def test_cisa_kev_normalizes_to_feed_items(monkeypatch):
+    agent = ThreatIntelAgent()
+
+    def fake_json(url, params=None):
+        return {
+            "vulnerabilities": [
+                {
+                    "cveID": "CVE-2026-0001",
+                    "vendorProject": "Example Health",
+                    "product": "Portal",
+                    "vulnerabilityName": "Example sensitive data disclosure",
+                    "shortDescription": "Sensitive patient data can leak through an access control flaw.",
+                    "requiredAction": "Apply updates.",
+                }
+            ]
+        }
+
+    monkeypatch.setattr(agent, "_get_json", fake_json)
+    items = agent._fetch_cisa_kev()
+    assert items[0].source == "CISA Known Exploited Vulnerabilities"
+    assert items[0].external_id == "CVE-2026-0001"
+    assert items[0].category == AttackCategory.data_exfiltration
+
+
 def test_threat_intel_shared_state_round_trip(tmp_path, monkeypatch):
     monkeypatch.setenv("DATABASE_PATH", str(tmp_path / "agentforge-test.db"))
     get_settings.cache_clear()

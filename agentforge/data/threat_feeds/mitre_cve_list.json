@@ -1,0 +1,56 @@
+[
+  {
+    "source": "MITRE CVE List",
+    "external_id": "CVELIST-7b0ef536eafb",
+    "title": "58 changes (0 new | 58 updated):",
+    "summary": "Recent CVE List activity from the official CVEProject cvelistV5 repository, used as the authoritative CVE record stream before NVD enrichment.",
+    "url": "https://github.com/CVEProject/cvelistV5/commit/7b0ef536eafbc575f6dee164ed237f65c19841ff",
+    "category": "identity_role",
+    "fetched_at": "2026-05-12T23:42:16.959340Z"
+  },
+  {
+    "source": "MITRE CVE List",
+    "external_id": "CVELIST-e193bfb16567",
+    "title": "88 changes (6 new | 82 updated):",
+    "summary": "Recent CVE List activity from the official CVEProject cvelistV5 repository, used as the authoritative CVE record stream before NVD enrichment.",
+    "url": "https://github.com/CVEProject/cvelistV5/commit/e193bfb165679bf4fa69ba6b3c337489152bdd5d",
+    "category": "identity_role",
+    "fetched_at": "2026-05-12T23:42:16.959391Z"
+  },
+  {
+    "source": "MITRE CVE List",
+    "external_id": "CVELIST-3a3a23a390bc",
+    "title": "15 changes (12 new | 3 updated):",
+    "summary": "Recent CVE List activity from the official CVEProject cvelistV5 repository, used as the authoritative CVE record stream before NVD enrichment.",
+    "url": "https://github.com/CVEProject/cvelistV5/commit/3a3a23a390bcda4dfff839852a2d201c7cb04e14",
+    "category": "identity_role",
+    "fetched_at": "2026-05-12T23:42:16.959416Z"
+  },
+  {
+    "source": "MITRE CVE List",
+    "external_id": "CVELIST-ed8e8b6e2d9a",
+    "title": "8 changes (7 new | 1 updated):",
+    "summary": "Recent CVE List activity from the official CVEProject cvelistV5 repository, used as the authoritative CVE record stream before NVD enrichment.",
+    "url": "https://github.com/CVEProject/cvelistV5/commit/ed8e8b6e2d9af3b6d21231c2505366a2ff2b970f",
+    "category": "identity_role",
+    "fetched_at": "2026-05-12T23:42:16.959437Z"
+  },
+  {
+    "source": "MITRE CVE List",
+    "external_id": "CVELIST-7cfe34446b4e",
+    "title": "16 changes (13 new | 3 updated):",
+    "summary": "Recent CVE List activity from the official CVEProject cvelistV5 repository, used as the authoritative CVE record stream before NVD enrichment.",
+    "url": "https://github.com/CVEProject/cvelistV5/commit/7cfe34446b4e055d686d220a09e1599f092449c1",
+    "category": "identity_role",
+    "fetched_at": "2026-05-12T23:42:16.959458Z"
+  },
+  {
+    "source": "MITRE CVE List",
+    "external_id": "CVELIST-12ed792705bc",
+    "title": "66 changes (14 new | 52 updated):",
+    "summary": "Recent CVE List activity from the official CVEProject cvelistV5 repository, used as the authoritative CVE record stream before NVD enrichment.",
+    "url": "https://github.com/CVEProject/cvelistV5/commit/12ed792705bc15df4e957f9e199c9e94515215ae",
+    "category": "identity_role",
+    "fetched_at": "2026-05-12T23:42:16.959481Z"
+  }
+]

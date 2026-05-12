@@ -22,7 +22,7 @@ This is a separate application, not an OpenEMR fork. It runs authorized adversar
 
 - Runs authorized adversarial evaluations against `TARGET_ALLOWLIST`.
 - Separates responsibilities across Threat Intelligence, Orchestrator, Red Team, Judge, and Documentation agents.
-- Refreshes external threat-intelligence feeds from OWASP LLM Top 10, MITRE ATLAS, NIST AI RMF, and NVD CVE 2.0.
+- Refreshes external threat-intelligence feeds from OWASP LLM Top 10, MITRE ATLAS, NIST AI RMF, NVD CVE 2.0, MITRE CVE List, CISA Known Exploited Vulnerabilities, GitHub Advisory Database, and OSV.dev.
 - Normalizes fetched threat items into generated adversarial seed cases.
 - Stores Layer 1 threat feed items, generated cases, and coverage state in SQLite shared state.
 - Maintains a Layer 3 vulnerability database over reports, verdicts, and attack results.

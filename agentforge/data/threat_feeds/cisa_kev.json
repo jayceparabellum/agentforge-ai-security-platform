@@ -1,0 +1,110 @@
+[
+  {
+    "source": "CISA Known Exploited Vulnerabilities",
+    "external_id": "CVE-2026-42208",
+    "title": "CVE-2026-42208 BerriAI LiteLLM",
+    "summary": "BerriAI LiteLLM SQL Injection Vulnerability: BerriAI LiteLLM contains a SQL injection vulnerability that allows an attacker to read data from the proxy's database and potentially modify it, leading to unauthorised access to the proxy and the credentials it manages.",
+    "url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search=CVE-2026-42208",
+    "category": "data_exfiltration",
+    "fetched_at": "2026-05-12T23:42:17.532074Z"
+  },
+  {
+    "source": "CISA Known Exploited Vulnerabilities",
+    "external_id": "CVE-2026-6973",
+    "title": "CVE-2026-6973 Ivanti Endpoint Manager Mobile (EPMM)",
+    "summary": "Ivanti Endpoint Manager Mobile (EPMM) Improper Input Validation Vulnerability: Ivanti Endpoint Manager Mobile (EPMM) contains an improper input validation vulnerability that allows a remotely authenticated user with administrative access to achieve remote code execution.",
+    "url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search=CVE-2026-6973",
+    "category": "tool_misuse",
+    "fetched_at": "2026-05-12T23:42:17.532126Z"
+  },
+  {
+    "source": "CISA Known Exploited Vulnerabilities",
+    "external_id": "CVE-2026-0300",
+    "title": "CVE-2026-0300 Palo Alto Networks PAN-OS",
+    "summary": "Palo Alto Networks PAN-OS Out-of-bounds Write Vulnerability: Palo Alto Networks PAN-OS contains an out-of-bounds write vulnerability in the User-ID Authentication Portal (aka Captive Portal) service that can allow an unauthenticated attacker to execute arbitrary code with root privileges on the PA-Series and VM-Series firewalls by sending specially crafted packets.",
+    "url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search=CVE-2026-0300",
+    "category": "identity_role",
+    "fetched_at": "2026-05-12T23:42:17.532163Z"
+  },
+  {
+    "source": "CISA Known Exploited Vulnerabilities",
+    "external_id": "CVE-2026-31431",
+    "title": "CVE-2026-31431 Linux Kernel",
+    "summary": "Linux Kernel Incorrect Resource Transfer Between Spheres Vulnerability: Linux Kernel contains an incorrect resource transfer between spheres vulnerability that could allow for privilege escalation.",
+    "url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search=CVE-2026-31431",
+    "category": "denial_of_service",
+    "fetched_at": "2026-05-12T23:42:17.532198Z"
+  },
+  {
+    "source": "CISA Known Exploited Vulnerabilities",
+    "external_id": "CVE-2026-41940",
+    "title": "CVE-2026-41940 WebPros cPanel & WHM and WP2 (WordPress Squared)",
+    "summary": "WebPros cPanel & WHM and WP2 (WordPress Squared) Missing Authentication for Critical Function Vulnerability: WebPros cPanel & WHM (WebHost Manager) and WP2 (WordPress Squared) contain an authentication bypass vulnerability in the login flow that allows unauthenticated remote attackers to gain unauthorized access to the control panel.",
+    "url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search=CVE-2026-41940",
+    "category": "tool_misuse",
+    "fetched_at": "2026-05-12T23:42:17.532220Z"
+  },
+  {
+    "source": "CISA Known Exploited Vulnerabilities",
+    "external_id": "CVE-2024-1708",
+    "title": "CVE-2024-1708 ConnectWise ScreenConnect",
+    "summary": "ConnectWise ScreenConnect Path Traversal Vulnerability: ConnectWise ScreenConnect contains a path traversal vulnerability which could allow an attacker to execute remote code or directly impact confidential data and critical systems.",
+    "url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search=CVE-2024-1708",
+    "category": "data_exfiltration",
+    "fetched_at": "2026-05-12T23:42:17.532235Z"
+  },
+  {
+    "source": "CISA Known Exploited Vulnerabilities",
+    "external_id": "CVE-2026-32202",
+    "title": "CVE-2026-32202 Microsoft Windows",
+    "summary": "Microsoft Windows Protection Mechanism Failure Vulnerability: Microsoft Windows Shell contains a protection mechanism failure vulnerability that allows an unauthorized attacker to perform spoofing over a network.",
+    "url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search=CVE-2026-32202",
+    "category": "identity_role",
+    "fetched_at": "2026-05-12T23:42:17.532257Z"
+  },
+  {
+    "source": "CISA Known Exploited Vulnerabilities",
+    "external_id": "CVE-2025-29635",
+    "title": "CVE-2025-29635 D-Link DIR-823X",
+    "summary": "D-Link DIR-823X Command Injection Vulnerability: D-Link DIR-823X contains a command injection vulnerability that allows an authorized attacker to execute arbitrary commands on remote devices by sending a POST request to /goform/set_prohibiting via the corresponding function. The impacted product could be end-of-life (EoL) and/or end-of-service (EoS). Users should discontinue product utilization.",
+    "url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search=CVE-2025-29635",
+    "category": "tool_misuse",
+    "fetched_at": "2026-05-12T23:42:17.532281Z"
+  },
+  {
+    "source": "CISA Known Exploited Vulnerabilities",
+    "external_id": "CVE-2024-7399",
+    "title": "CVE-2024-7399 Samsung MagicINFO 9 Server",
+    "summary": "Samsung MagicINFO 9 Server Path Traversal Vulnerability: Samsung MagicINFO 9 Server contains a path traversal vulnerability that could allow an attacker to write arbitrary files as system authority.",
+    "url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search=CVE-2024-7399",
+    "category": "identity_role",
+    "fetched_at": "2026-05-12T23:42:17.532303Z"
+  },
+  {
+    "source": "CISA Known Exploited Vulnerabilities",
+    "external_id": "CVE-2024-57728",
+    "title": "CVE-2024-57728 SimpleHelp  SimpleHelp",
+    "summary": "SimpleHelp Path Traversal Vulnerability: SimpleHelp contains a path traversal vulnerability that allows admin users to upload arbitrary files anywhere on the file system by uploading a crafted zip file (i.e. zip slip). This can be exploited to execute arbitrary code on the host in the context of the SimpleHelp server user.",
+    "url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search=CVE-2024-57728",
+    "category": "state_corruption",
+    "fetched_at": "2026-05-12T23:42:17.532325Z"
+  },
+  {
+    "source": "CISA Known Exploited Vulnerabilities",
+    "external_id": "CVE-2024-57726",
+    "title": "CVE-2024-57726 SimpleHelp  SimpleHelp",
+    "summary": "SimpleHelp Missing Authorization Vulnerability: SimpleHelp contains a missing authorization vulnerability that could allow low-privileged technicians to create API keys with excessive permissions. These API keys can be used to escalate privileges to the server admin role.",
+    "url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search=CVE-2024-57726",
+    "category": "identity_role",
+    "fetched_at": "2026-05-12T23:42:17.532356Z"
+  },
+  {
+    "source": "CISA Known Exploited Vulnerabilities",
+    "external_id": "CVE-2026-39987",
+    "title": "CVE-2026-39987 Marimo Marimo",
+    "summary": "Marimo Remote Code Execution Vulnerability: Marimo contains an pre-authorization remote code execution vulnerability, allowing an unauthenticated attacked to shell access and execute arbitrary system commands.",
+    "url": "https://www.cisa.gov/known-exploited-vulnerabilities-catalog?search=CVE-2026-39987",
+    "category": "tool_misuse",
+    "fetched_at": "2026-05-12T23:42:17.532375Z"
+  }
+]

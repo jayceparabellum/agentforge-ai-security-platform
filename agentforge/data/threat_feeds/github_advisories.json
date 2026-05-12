@@ -1,0 +1,110 @@
+[
+  {
+    "source": "GitHub Advisory Database",
+    "external_id": "CVE-2026-44660",
+    "title": "UltraJSON has a Memory Leak in ujson.dump() on Write Failure",
+    "summary": "Reviewed GitHub advisory GHSA-c38f-wx89-p2xg for pip:ujson. Severity: high.",
+    "url": "https://github.com/advisories/GHSA-c38f-wx89-p2xg",
+    "category": "data_exfiltration",
+    "fetched_at": "2026-05-12T23:42:18.150007Z"
+  },
+  {
+    "source": "GitHub Advisory Database",
+    "external_id": "CVE-2026-44652",
+    "title": "SillyTavern has a SSRF vulnerability in the CORS proxy middleware",
+    "summary": "Reviewed GitHub advisory GHSA-ccfq-2454-f5xw for npm:sillytavern. Severity: medium.",
+    "url": "https://github.com/advisories/GHSA-ccfq-2454-f5xw",
+    "category": "identity_role",
+    "fetched_at": "2026-05-12T23:42:18.150063Z"
+  },
+  {
+    "source": "GitHub Advisory Database",
+    "external_id": "CVE-2026-44651",
+    "title": "SillyTavern has a reflected XSS vulnerability in the CORS proxy middleware",
+    "summary": "Reviewed GitHub advisory GHSA-xc4x-2452-5gc9 for npm:sillytavern. Severity: medium.",
+    "url": "https://github.com/advisories/GHSA-xc4x-2452-5gc9",
+    "category": "identity_role",
+    "fetched_at": "2026-05-12T23:42:18.150094Z"
+  },
+  {
+    "source": "GitHub Advisory Database",
+    "external_id": "CVE-2026-44650",
+    "title": "SillyTavern has a Path Traversal issue",
+    "summary": "Reviewed GitHub advisory GHSA-886q-f44j-h6wh for npm:sillytavern. Severity: critical.",
+    "url": "https://github.com/advisories/GHSA-886q-f44j-h6wh",
+    "category": "identity_role",
+    "fetched_at": "2026-05-12T23:42:18.150121Z"
+  },
+  {
+    "source": "GitHub Advisory Database",
+    "external_id": "CVE-2026-44649",
+    "title": "SillyTavern has Authentication Bypass via SSO Header Injection",
+    "summary": "Reviewed GitHub advisory GHSA-gxx6-h3g6-vwjh for npm:sillytavern. Severity: critical.",
+    "url": "https://github.com/advisories/GHSA-gxx6-h3g6-vwjh",
+    "category": "identity_role",
+    "fetched_at": "2026-05-12T23:42:18.150150Z"
+  },
+  {
+    "source": "GitHub Advisory Database",
+    "external_id": "CVE-2026-44648",
+    "title": "SillyTavern: Existing sessions are not invalidated after password change, allowing session reuse and account takeover",
+    "summary": "Reviewed GitHub advisory GHSA-wmm3-h9qj-p5v6 for npm:sillytavern. Severity: high.",
+    "url": "https://github.com/advisories/GHSA-wmm3-h9qj-p5v6",
+    "category": "identity_role",
+    "fetched_at": "2026-05-12T23:42:18.150180Z"
+  },
+  {
+    "source": "GitHub Advisory Database",
+    "external_id": "CVE-2026-44594",
+    "title": "esm.sh: Path Traversal via package.json browser field allows reading arbitrary server files",
+    "summary": "Reviewed GitHub advisory GHSA-rg65-45m7-hq57 for go:github.com/esm-dev/esm.sh. Severity: high.",
+    "url": "https://github.com/advisories/GHSA-rg65-45m7-hq57",
+    "category": "identity_role",
+    "fetched_at": "2026-05-12T23:42:18.150208Z"
+  },
+  {
+    "source": "GitHub Advisory Database",
+    "external_id": "CVE-2026-44593",
+    "title": "esm.sh: Legacy Route Path Traversal Can Lead to RCE",
+    "summary": "Reviewed GitHub advisory GHSA-3636-h3vx-6465 for go:github.com/esm-dev/esm.sh. Severity: critical.",
+    "url": "https://github.com/advisories/GHSA-3636-h3vx-6465",
+    "category": "identity_role",
+    "fetched_at": "2026-05-12T23:42:18.150238Z"
+  },
+  {
+    "source": "GitHub Advisory Database",
+    "external_id": "CVE-2026-8026",
+    "title": "Flowise: Bcrypt Password Hash Exposure",
+    "summary": "Reviewed GitHub advisory GHSA-8f47-4rh3-x44m for npm:flowise. Severity: medium.",
+    "url": "https://github.com/advisories/GHSA-8f47-4rh3-x44m",
+    "category": "identity_role",
+    "fetched_at": "2026-05-12T23:42:18.150264Z"
+  },
+  {
+    "source": "GitHub Advisory Database",
+    "external_id": "CVE-2026-8088",
+    "title": "OSGeo GDAL vulnerable to out-of-bounds read",
+    "summary": "Reviewed GitHub advisory GHSA-j3f5-rw74-g4rv for pip:GDAL. Severity: low.",
+    "url": "https://github.com/advisories/GHSA-j3f5-rw74-g4rv",
+    "category": "identity_role",
+    "fetched_at": "2026-05-12T23:42:18.150289Z"
+  },
+  {
+    "source": "GitHub Advisory Database",
+    "external_id": "CVE-2026-8087",
+    "title": "OSGeo GDAL vulnerable to heap-based buffer overflow",
+    "summary": "Reviewed GitHub advisory GHSA-h9rh-5ffh-h669 for pip:GDAL. Severity: low.",
+    "url": "https://github.com/advisories/GHSA-h9rh-5ffh-h669",
+    "category": "identity_role",
+    "fetched_at": "2026-05-12T23:42:18.150314Z"
+  },
+  {
+    "source": "GitHub Advisory Database",
+    "external_id": "CVE-2026-44742",
+    "title": "Postorius is vulnerable to XSS",
+    "summary": "Reviewed GitHub advisory GHSA-r7c9-7pjq-hmm8 for pip:postorius. Severity: high.",
+    "url": "https://github.com/advisories/GHSA-r7c9-7pjq-hmm8",
+    "category": "identity_role",
+    "fetched_at": "2026-05-12T23:42:18.150339Z"
+  }
+]
