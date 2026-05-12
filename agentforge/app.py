@@ -67,6 +67,11 @@ def agent_transitions(campaign_id: str | None = None) -> dict:
     return fetch_agent_transitions(campaign_id=campaign_id)
 
 
+@app.get("/api/provider-routes")
+def provider_routes() -> dict:
+    return get_settings().provider_routes
+
+
 @app.get("/", response_class=HTMLResponse)
 def index() -> str:
     data = fetch_dashboard()
@@ -98,6 +103,10 @@ def index() -> str:
         f"<tr><td>{row['node']}</td><td>{row['status']}</td><td>{row['count']}</td></tr>"
         for row in data["agent_transitions"]
     ) or "<tr><td colspan='3'>No Layer 2 transitions recorded yet.</td></tr>"
+    provider_rows = "".join(
+        f"<tr><td>{agent}</td><td>{route['provider']}</td><td>{route['model']}</td><td>{route['data_path']}</td></tr>"
+        for agent, route in get_settings().provider_routes.items()
+    )
     return f"""
 <!doctype html>
 <html lang="en">
@@ -162,6 +171,8 @@ def index() -> str:
     <section>
       <h2>Layer 2 Multi-Agent Core</h2>
       <table><thead><tr><th>Node</th><th>Status</th><th>Transitions</th></tr></thead><tbody>{transition_rows}</tbody></table>
+      <h3>Provider Routes</h3>
+      <table><thead><tr><th>Path</th><th>Provider</th><th>Model</th><th>Data Path</th></tr></thead><tbody>{provider_rows}</tbody></table>
     </section>
     <section>
       <h2>Agent Trace</h2>

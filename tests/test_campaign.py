@@ -110,3 +110,12 @@ def test_layer2_core_records_transitions(tmp_path, monkeypatch):
     transitions = fetch_agent_transitions(campaign_id="campaign-test")
     assert transitions["transitions"][0]["to_node"] == "Threat Intelligence Agent"
     assert transitions["node_counts"][0]["count"] == 1
+
+
+def test_provider_routes_capture_compliance_paths():
+    get_settings.cache_clear()
+    routes = get_settings().provider_routes
+    assert routes["Red Team Agent"]["provider"] == "OpenRouter"
+    assert "no PHI" in routes["Red Team Agent"]["data_path"]
+    assert routes["Judge Agent"]["provider"] == "Anthropic direct"
+    assert "may contain PHI" in routes["Judge Agent"]["data_path"]

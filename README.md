@@ -28,6 +28,7 @@ This is a separate application, not an OpenEMR fork. It runs authorized adversar
 - Maintains a Layer 3 vulnerability database over reports, verdicts, and attack results.
 - Maintains a Token Budget Ledger with per-campaign and per-agent estimated spend.
 - Runs campaigns through an explicit Layer 2 multi-agent core with typed transition logging.
+- Records Layer 2 provider routes: Red Team through OpenRouter, Judge through direct Anthropic, Documentation configurable, and local fallback through Ollama.
 - Stores agent traces, attack results, verdicts, and report metadata in SQLite.
 - Provides a FastAPI dashboard and JSON API for reviewing findings.
 - Ships with a Dockerfile and Render Blueprint config.
@@ -39,12 +40,13 @@ The implementation follows the supplied architecture model in `assets/architectu
 
 ![AgentForge architecture](assets/architecture-diagram.png)
 
-The current MVP is provider-agnostic. If model credentials are absent, AgentForge uses deterministic seed mutation and rubric-based judging so the harness remains runnable and reproducible. The intended production routing is:
+The current MVP is provider-agnostic. If model credentials are absent, AgentForge uses deterministic seed mutation and rubric-based judging so the harness remains runnable and reproducible. The intended production routing is now encoded in Layer 2 graph metadata:
 
 - Red Team Agent: OpenRouter-backed open-weight model.
-- Judge Agent: direct provider path for consistent independent verdicts.
+- Judge Agent: direct Anthropic path for consistent independent verdicts and fewer data hops for target responses that may contain PHI.
 - Orchestrator Agent: low-cost reasoning model or deterministic prioritizer.
-- Documentation Agent: cost-effective structured generation model.
+- Documentation Agent: OpenRouter or direct provider for structured report generation.
+- Local fallback: Ollama + Dolphin-Llama3.
 
 ## Local Setup
 
@@ -106,6 +108,13 @@ AGENTFORGE_CAMPAIGN_CADENCE=weekly
 CAMPAIGN_BUDGET_USD=2.50
 THREAT_INTEL_MAX_GENERATED_CASES=12
 NVD_KEYWORD_QUERY=LLM AI machine learning
+RED_TEAM_PROVIDER=OpenRouter
+RED_TEAM_MODEL=meta-llama/llama-3.3-70b-instruct
+JUDGE_PROVIDER=Anthropic direct
+JUDGE_MODEL=claude-haiku-4-5
+DOCUMENTATION_PROVIDER=OpenRouter or direct
+DOC_MODEL=meta-llama/llama-3.3-70b-instruct
+LOCAL_FALLBACK_PROVIDER=Ollama + Dolphin-Llama3
 ```
 
 The default cron schedule is:
@@ -148,6 +157,7 @@ schedule: "0 5 1,15 * *"
 - `/api/vulnerabilities`: queryable Layer 3 vulnerability database.
 - `/api/budget-ledger`: per-agent token and cost ledger.
 - `/api/agent-transitions`: Layer 2 graph transition log.
+- `/api/provider-routes`: Layer 2 provider/data-hop routing plan.
 
 ## Target Integration Note
 

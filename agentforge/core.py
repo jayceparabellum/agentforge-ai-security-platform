@@ -16,7 +16,7 @@ from agentforge.storage import (
 from agentforge.target import TargetClient
 
 
-GRAPH_VERSION = "layer2-core-v1"
+GRAPH_VERSION = "layer2-langgraph-provider-routes-v2"
 
 
 def estimate_tokens(sequence: list[str], response: str) -> int:
@@ -46,6 +46,7 @@ class MultiAgentCore:
         self.judge = JudgeAgent()
         self.docs = DocumentationAgent()
         self.target = TargetClient(self.settings)
+        self.provider_routes = self.settings.provider_routes
         self.nodes_visited: list[str] = []
         self.transition_count = 0
 
@@ -64,7 +65,11 @@ class MultiAgentCore:
             brief.id,
             "completed",
             "CampaignBrief",
-            {"case_count": len(cases), "categories": [category.value for category in brief.categories]},
+            {
+                "case_count": len(cases),
+                "categories": [category.value for category in brief.categories],
+                "provider_routes": self.provider_routes,
+            },
         )
         self._budget(brief.id, self.orchestrator.name, "select_cases", 0, 0.0, brief.budget_usd, {"case_count": len(cases)})
 
@@ -86,7 +91,12 @@ class MultiAgentCore:
                 brief.id,
                 "completed",
                 "AttackCase",
-                {"case_id": case.id, "mutated_case_id": mutated.id, "turns": len(mutated.sequence)},
+                {
+                    "case_id": case.id,
+                    "mutated_case_id": mutated.id,
+                    "turns": len(mutated.sequence),
+                    "provider_route": self.provider_routes["Red Team Agent"],
+                },
             )
             self._budget(
                 brief.id,
@@ -146,7 +156,12 @@ class MultiAgentCore:
                 brief.id,
                 "completed",
                 "Verdict",
-                {"case_id": case.id, "verdict": verdict.verdict, "confidence": verdict.confidence},
+                {
+                    "case_id": case.id,
+                    "verdict": verdict.verdict,
+                    "confidence": verdict.confidence,
+                    "provider_route": self.provider_routes["Judge Agent"],
+                },
             )
             judge_tokens = estimate_tokens([case.expected_safe_behavior, result.observed_behavior], result.target_response_excerpt)
             self._budget(
@@ -169,7 +184,12 @@ class MultiAgentCore:
                     brief.id,
                     "completed",
                     "VulnerabilityReport",
-                    {"case_id": case.id, "report_id": report.id, "severity": report.severity},
+                    {
+                        "case_id": case.id,
+                        "report_id": report.id,
+                        "severity": report.severity,
+                        "provider_route": self.provider_routes["Documentation Agent"],
+                    },
                 )
                 doc_tokens = estimate_tokens(result.payload_sequence, verdict.rationale)
                 self._budget(
@@ -255,6 +275,7 @@ class MultiAgentCore:
             "cases_run": len(results),
             "estimated_cost_usd": round(total_cost, 6),
             "graph": summary.model_dump(mode="json"),
+            "provider_routes": self.provider_routes,
             "results": results,
         }
 

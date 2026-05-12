@@ -34,3 +34,5 @@ Threat intelligence refresh runs twice per month. This catches new source update
 The Token Budget Ledger persists the operational cost model instead of leaving cost as a one-off campaign total. The MVP estimates tokens from prompt/response word counts and applies a conservative placeholder rate. In production, those entries should be replaced or augmented with provider-returned usage data.
 
 Layer 2 now records which agent produced each budget entry. This allows campaign spend to be separated by Red Team mutation, target execution, Judge evaluation, Documentation, and Orchestrator control work.
+
+Provider routing also affects cost strategy. Red Team generation is routed through OpenRouter because model swapping and price competition matter most on synthetic payload generation. Judge evaluation stays direct to Anthropic because correctness and a simpler data-hop story matter more than marginal routing flexibility when target responses may contain sensitive data.

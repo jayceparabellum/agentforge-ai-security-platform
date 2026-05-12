@@ -31,7 +31,7 @@ One MVP limitation is intentionally visible: the OpenEMR application is reachabl
 | Local verification | `pytest` passed on Mac mini |
 | Live smoke behavior | Campaign controls ran and populated review findings |
 | Layer 1 behavior | Fetches OWASP LLM Top 10, MITRE ATLAS, NIST AI 600-1, and NVD CVE 2.0; normalizes external items into generated seed cases; stores feed/case/coverage state in SQLite |
-| Layer 2 behavior | Runs campaigns through `MultiAgentCore` graph version `layer2-core-v1` and records typed transitions |
+| Layer 2 behavior | Runs campaigns through `MultiAgentCore` graph version `layer2-langgraph-provider-routes-v2` and records typed transitions with provider/data-hop metadata |
 | Layer 3 behavior | Persists vulnerability DB, coverage map, and token budget ledger in SQLite shared state |
 | Known integration gap | Confirm final `TARGET_CHAT_PATH` for the Clinical Co-Pilot chat endpoint |
 
@@ -87,10 +87,10 @@ Each transition is stored in SQLite so a campaign can be reconstructed after the
 
 ## Layer 2 Multi-Agent Core
 
-Layer 2 is implemented in `agentforge/core.py` as `MultiAgentCore`. It coordinates the agents through a typed graph rather than leaving orchestration as an implicit script. The current graph version is:
+Layer 2 is implemented in `agentforge/core.py` as `MultiAgentCore`. It coordinates the agents through a typed LangGraph-style graph rather than leaving orchestration as an implicit script. The current graph version is:
 
 ```text
-layer2-core-v1
+layer2-langgraph-provider-routes-v2
 ```
 
 The graph records transitions across these nodes:
@@ -114,6 +114,8 @@ Every handoff writes an `AgentTransition` row with:
 - payload summary
 - timestamp
 
+The payload summary includes provider-route metadata for handoffs where model routing matters. This makes the compliance reasoning auditable in the graph trace itself.
+
 The transition log is exposed at:
 
 ```text
@@ -121,6 +123,17 @@ GET /api/agent-transitions
 ```
 
 The campaign response also includes a graph summary with graph version, visited nodes, transition count, and halt state. In verification, a smoke campaign recorded 48 graph transitions across the multi-agent core.
+
+### Layer 2 Provider Routes
+
+| Path | Provider | Why |
+| --- | --- | --- |
+| Red Team Agent | OpenRouter | Red Team generates synthetic attack payloads and should not receive PHI. Model flexibility is the workflow: if one offensive model refuses or underperforms, OpenRouter allows swapping without changing the graph. |
+| Judge Agent | Anthropic direct | Judge sees target responses, which may contain PHI if an attack succeeds. A direct provider path avoids a third-party aggregator hop and keeps the compliance story simple. |
+| Documentation Agent | OpenRouter or direct | Documentation operates on already-flagged exploit metadata and structured verdicts. It can use OpenRouter for cost/flexibility or a direct provider if compliance requirements tighten. |
+| Local fallback | Ollama + Dolphin-Llama3 | Local/offline development and low-cost smoke testing remain available without changing the graph contract. |
+
+This preserves the non-negotiable separation between the Red Team and Judge. Attack generation and attack evaluation use different providers and different routing paths. The architecture uses OpenRouter where its strength matters, model flexibility on the offensive side, and avoids it where its weakness matters, extra data hops on the path that can see real target responses.
 
 ## Orchestration Strategy
 
@@ -234,7 +247,7 @@ Low and medium reports can be filed automatically into the review queue.
 
 ## Provider Strategy
 
-The deployed code is provider-agnostic today and runs without paid LLM credentials. Recommended final routing:
+The deployed code is provider-agnostic today and runs without paid LLM credentials, but Layer 2 now records the intended provider routes in graph metadata. Recommended final routing:
 
 - Red Team: Llama 3.3 70B or similar open-weight model via OpenRouter.
 - Judge: direct Anthropic Claude Haiku-class model for consistency and narrower target-response routing.
