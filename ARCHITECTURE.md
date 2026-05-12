@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-AgentForge is a separate adversarial security platform built to continuously evaluate the deployed OpenEMR Clinical Co-Pilot at `https://openemr-js46.onrender.com`. The MVP is now deployed on Render through Blueprint `exs-d81aqof7f7vs73dfgng0`, with two live services: the `agentforge-ai-security-platform` web dashboard/API and the `agentforge-weekly-campaign` scheduled campaign runner. The active deployment source is the GitHub repository `jayceparabellum/agentforge-ai-security-platform`; the Gauntlet GitLab remote remains documented, but it is not the active Render source because GitLab authentication for that self-hosted host was not available during deployment.
+AgentForge is a separate adversarial security platform built to continuously evaluate the deployed OpenEMR Clinical Co-Pilot at `https://clinical-copilot-0mgb.onrender.com`. The MVP is now deployed on Render through Blueprint `exs-d81aqof7f7vs73dfgng0`, with two live services: the `agentforge-ai-security-platform` web dashboard/API and the `agentforge-weekly-campaign` scheduled campaign runner. The active deployment source is the GitHub repository `jayceparabellum/agentforge-ai-security-platform`; the Gauntlet GitLab remote remains documented, but it is not the active Render source because GitLab authentication for that self-hosted host was not available during deployment.
 
 The platform is designed around the core requirement from the assignment: this cannot be a static prompt list, a one-time penetration test, or a single-agent script. AgentForge separates adversarial testing into distinct agents with distinct contexts, trust levels, and outputs so the system can discover, evaluate, document, and regression-test vulnerabilities without letting one role compromise another. The currently deployed MVP has already run smoke campaigns from both the Mac mini development environment and the Render-launched application. Those campaigns reached the deployed OpenEMR target, verified that the target returned HTTP 200, exercised six attack categories, and populated the review queue with reportable findings.
 
@@ -14,7 +14,7 @@ The implemented MVP uses FastAPI, SQLite, typed Pydantic models, JSON seed cases
 
 The default campaign cadence is weekly, not daily, to control token usage while still producing reviewable findings. A biweekly cadence is also viable, but weekly provides stronger regression visibility for the assignment and keeps projected cost low with the default `$2.50` campaign budget. Human approval gates are placed where autonomy creates the most risk: critical-severity reports, budget overruns, and out-of-taxonomy findings. The Red Team mutation loop remains autonomous within budget because that is where the platform's discovery value lives.
 
-One MVP limitation is intentionally visible: the OpenEMR application is reachable, but the exact deployed Clinical Co-Pilot chat route still needs confirmation. The default adapter uses `TARGET_CHAT_PATH=/api/copilot/chat`. Until that route is confirmed or corrected, AgentForge records many live attack attempts as `partial` instead of claiming false exploit success or false safety. This is a defensible MVP behavior: an unevaluable or partially integrated test is preserved as a review finding and regression candidate.
+The deployed Clinical Co-Pilot application is reachable, and the current default adapter uses `TARGET_CHAT_PATH=/chat`. If the route changes, AgentForge records incomplete live attack attempts as `partial` instead of claiming false exploit success or false safety.
 
 ## Deployed MVP State
 
@@ -25,7 +25,7 @@ One MVP limitation is intentionally visible: the OpenEMR application is reachabl
 | Scheduled job | `agentforge-weekly-campaign` deployed |
 | Threat intel job | `agentforge-threat-intel-refresh` added for Blueprint sync |
 | Source repo for Render | GitHub `jayceparabellum/agentforge-ai-security-platform` |
-| Target system | `https://openemr-js46.onrender.com` |
+| Target system | `https://clinical-copilot-0mgb.onrender.com` |
 | Campaign cadence | Weekly, Monday 06:00 UTC |
 | Campaign budget | `$2.50` default |
 | Local verification | `pytest` passed on Mac mini |
@@ -35,7 +35,7 @@ One MVP limitation is intentionally visible: the OpenEMR application is reachabl
 | Layer 3 behavior | Persists vulnerability DB, coverage map, and token budget ledger in SQLite shared state |
 | Layer 4 behavior | Deterministic fuzzers generate prompt variants and regression replay reruns confirmed/partial findings |
 | Layer 5 behavior | Maintains the allowlisted OpenEMR target profile, probes likely endpoint paths, and records whether the deployed target integration is healthy, partial, or unreachable |
-| Known integration gap | Confirm final `TARGET_CHAT_PATH` for the Clinical Co-Pilot chat endpoint |
+| Target route | `TARGET_CHAT_PATH=/chat` for the deployed Clinical Co-Pilot service |
 
 ## System Diagram
 
@@ -237,7 +237,7 @@ That runs after the weekly campaign window and provides a deterministic signal a
 Layer 5 is now represented in code as an explicit target-system layer rather than an implicit URL string. The target client enforces `TARGET_ALLOWLIST` before any health check, probe, campaign, or replay sends traffic. This keeps AgentForge scoped to the authorized deployed OpenEMR application:
 
 ```text
-https://openemr-js46.onrender.com
+https://clinical-copilot-0mgb.onrender.com
 ```
 
 The target layer persists two kinds of shared state:

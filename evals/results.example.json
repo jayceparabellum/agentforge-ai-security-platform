@@ -1,5 +1,5 @@
 {
-  "target": "https://openemr-js46.onrender.com",
+  "target": "https://clinical-copilot-0mgb.onrender.com",
   "cadence": "weekly",
   "categories_required": 3,
   "note": "Run `python -m agentforge.run_campaign --intensity scheduled` to generate live results in SQLite and markdown reports.",

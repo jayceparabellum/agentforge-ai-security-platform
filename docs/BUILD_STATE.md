@@ -17,7 +17,7 @@ Services:
 Target under test:
 
 `	ext
-https://openemr-js46.onrender.com
+https://clinical-copilot-0mgb.onrender.com
 `
 
 ## Layer 1: Threat Intelligence
@@ -74,9 +74,11 @@ Status: implemented for MVP.
 
 SQLite tables include:
 
-- ulnerability_reports
+-
+ulnerability_reports
 - ttack_results
-- erdicts
+-
+erdicts
 - 	hreat_feed_items
 - 	hreat_attack_cases
 - coverage_map
@@ -98,7 +100,7 @@ MVP substitution:
 
 ## Known Caveat
 
-The deployed OpenEMR URL is reachable, but the exact Clinical Co-Pilot chat endpoint still needs confirmation. Until TARGET_CHAT_PATH is corrected, attack outcomes may be recorded as partial integration findings rather than definitive exploit successes or passes.
+The deployed Clinical Co-Pilot URL is reachable and is now the only target URL. The default target chat path is TARGET_CHAT_PATH=/chat.
 
 ## Rollback
 
@@ -117,9 +119,11 @@ Status: implemented for MVP.
 Current behavior:
 
 - Deterministic fuzzer generates prompt/payload variants using case toggling, base64 wrapping, role-prefix wrapping, and spacing noise.
-- Fuzz cases are persisted in uzz_cases.
+- Fuzz cases are persisted in
+uzz_cases.
 - Regression replay reads confirmed/partial findings and replays their payloads against the configured target.
-- Replay results are persisted in egression_replay_results.
+- Replay results are persisted in
+egression_replay_results.
 - Dashboard and API expose Layer 4 state.
 - Render config includes gentforge-regression-replay as a weekly deterministic replay job.
 
@@ -151,7 +155,7 @@ Current behavior:
 - Endpoint probe evidence is persisted in `target_probe_results`.
 - The dashboard has a Layer 5 Target System panel with profile and endpoint probe summaries.
 - Render config includes `agentforge-target-probe` as a weekly pre-campaign target contract check.
-- The current deployed OpenEMR base URL is reachable, but the Clinical Co-Pilot chat endpoint is still unconfirmed, so the integration status is expected to report `partial` until `TARGET_CHAT_PATH` is corrected.
+- The current deployed Clinical Co-Pilot base URL is reachable, and the default red-team route is `TARGET_CHAT_PATH=/chat`.
 
 APIs:
 

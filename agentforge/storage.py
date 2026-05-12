@@ -430,9 +430,16 @@ def save_target_probe_results(results: List[TargetProbeResult]) -> None:
 
 
 def fetch_target_state(limit: int = 50) -> dict:
+    target_url = str(get_settings().target_base_url).rstrip("/")
     with connect() as conn:
-        profiles = conn.execute("SELECT * FROM target_profiles ORDER BY updated_at DESC").fetchall()
-        probes = conn.execute("SELECT * FROM target_probe_results ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()
+        profiles = conn.execute(
+            "SELECT * FROM target_profiles WHERE base_url = ? ORDER BY updated_at DESC",
+            (target_url,),
+        ).fetchall()
+        probes = conn.execute(
+            "SELECT * FROM target_probe_results WHERE target_url = ? ORDER BY created_at DESC LIMIT ?",
+            (target_url, limit),
+        ).fetchall()
         summary = conn.execute(
             """
             SELECT method,
@@ -443,9 +450,11 @@ def fetch_target_state(limit: int = 50) -> dict:
                    MAX(likely_chat_endpoint) AS likely_chat_endpoint,
                    MAX(created_at) AS last_checked_at
             FROM target_probe_results
+            WHERE target_url = ?
             GROUP BY method, path
             ORDER BY likely_chat_endpoint DESC, reachable DESC, path
-            """
+            """,
+            (target_url,),
         ).fetchall()
     return {
         "profiles": [dict(row) for row in profiles],
@@ -690,7 +699,11 @@ def fetch_dashboard() -> dict:
         replay_summary = conn.execute(
             "SELECT status, COUNT(*) AS count FROM regression_replay_results GROUP BY status ORDER BY status"
         ).fetchall()
-        target_profiles = conn.execute("SELECT * FROM target_profiles ORDER BY updated_at DESC LIMIT 3").fetchall()
+        target_url = str(get_settings().target_base_url).rstrip("/")
+        target_profiles = conn.execute(
+            "SELECT * FROM target_profiles WHERE base_url = ? ORDER BY updated_at DESC LIMIT 3",
+            (target_url,),
+        ).fetchall()
         target_probe_summary = conn.execute(
             """
             SELECT method,
@@ -700,10 +713,12 @@ def fetch_dashboard() -> dict:
                    MAX(likely_chat_endpoint) AS likely_chat_endpoint,
                    MAX(created_at) AS last_checked_at
             FROM target_probe_results
+            WHERE target_url = ?
             GROUP BY method, path
             ORDER BY likely_chat_endpoint DESC, reachable DESC, path
             LIMIT 12
-            """
+            """,
+            (target_url,),
         ).fetchall()
         cost = conn.execute("SELECT COALESCE(SUM(cost_estimate_usd), 0) AS cost FROM attack_results").fetchone()["cost"]
         last = conn.execute("SELECT campaign_id FROM events ORDER BY id DESC LIMIT 1").fetchone()

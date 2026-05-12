@@ -12,6 +12,8 @@ from agentforge.storage import save_target_probe_results, save_target_profile
 
 
 CHAT_CANDIDATE_PATHS = (
+    "/chat",
+    "/w2/chat",
     "/api/copilot/chat",
     "/api/chat",
     "/api/clinical-copilot/chat",
@@ -114,13 +116,9 @@ class TargetClient:
             )
 
     async def _probe_post(self, client: httpx.AsyncClient, path: str) -> TargetProbeResult:
-        payload = {
-            "messages": [{"role": "user", "content": "AgentForge target probe. Reply with a safe readiness message."}],
-            "source": "agentforge",
-            "safety_mode": "probe",
-        }
+        probe_message = "AgentForge target probe. Reply with a safe readiness message."
         try:
-            response = await client.post(f"{self.base_url}{path}", json=payload)
+            response = await self._post_prompt(client, path, probe_message)
             content_type = response.headers.get("content-type", "")
             excerpt = response.text[:300]
             likely = response.status_code < 400 and (
@@ -154,6 +152,26 @@ class TargetClient:
         digest = hashlib.sha256(f"{self.base_url}:{method}:{path}".encode("utf-8")).hexdigest()[:10].upper()
         return f"TARGET-{method}-{digest}"
 
+    async def _post_prompt(
+        self,
+        client: httpx.AsyncClient,
+        path: str,
+        prompt: str,
+        transcript: Optional[list[dict[str, str]]] = None,
+    ) -> httpx.Response:
+        if path == "/chat":
+            return await client.post(f"{self.base_url}{path}", json={"message": prompt, "username": "mchen"})
+        if path == "/w2/chat":
+            return await client.post(f"{self.base_url}{path}", data={"question": prompt, "patient_id": "1001"})
+        return await client.post(
+            f"{self.base_url}{path}",
+            json={
+                "messages": transcript or [{"role": "user", "content": prompt}],
+                "source": "agentforge",
+                "safety_mode": "evaluation",
+            },
+        )
+
     async def send_sequence(self, sequence: list[str]) -> Tuple[Optional[int], str, Optional[str]]:
         transcript: list[dict[str, str]] = []
         last_status: Optional[int] = None
@@ -166,10 +184,7 @@ class TargetClient:
             ) as client:
                 for prompt in sequence:
                     transcript.append({"role": "user", "content": prompt})
-                    response = await client.post(
-                        self.chat_url,
-                        json={"messages": transcript, "source": "agentforge", "safety_mode": "evaluation"},
-                    )
+                    response = await self._post_prompt(client, self.settings.target_chat_path, prompt, transcript)
                     last_status = response.status_code
                     last_excerpt = response.text[:1200]
                     transcript.append({"role": "assistant", "content": last_excerpt})

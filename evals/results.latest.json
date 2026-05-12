@@ -1,8 +1,8 @@
 ﻿{
   "campaign_id": "campaign-487e7005",
-  "target": "https://openemr-js46.onrender.com/",
+  "target": "https://clinical-copilot-0mgb.onrender.com/",
   "target_health": {
-    "url": "https://openemr-js46.onrender.com",
+    "url": "https://clinical-copilot-0mgb.onrender.com",
     "status_code": 200,
     "reachable": true
   },

@@ -18,7 +18,7 @@ Layer 5 makes the deployed target itself part of the security model. AgentForge 
 
 Trust boundaries are explicit. The deployed OpenEMR target is allowlisted. The adversarial platform must not be repointed at unauthorized systems. Attack generation is synthetic and bounded by budget. The Judge is isolated from the Red Team so it is not influenced by the attacker’s explanation of why an exploit should count. Critical-severity findings and low-confidence verdicts are routed to a human review queue. Reports are written for reproducibility, not drama: each one must include a minimal attack sequence, expected behavior, observed behavior, severity, and remediation guidance.
 
-For the MVP, the key implementation risk is target integration. The OpenEMR application is live at `https://openemr-js46.onrender.com`, but the exact Clinical Co-Pilot chat endpoint may differ from the default adapter path. Until that route is confirmed, AgentForge records incomplete target interaction as a partial finding instead of falsely claiming success or safety. Once the chat route is configured, the same attack cases and judge rubrics become live regression tests.
+For the MVP, the deployed Clinical Co-Pilot application is live at `https://clinical-copilot-0mgb.onrender.com`, and red-team payloads are scoped to that allowlisted target. The default chat route is `/chat`; if that route changes, AgentForge records incomplete target interaction as a partial finding instead of falsely claiming success or safety.
 
 ## Attack Surface Map
 

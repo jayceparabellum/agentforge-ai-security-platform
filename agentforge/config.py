@@ -10,9 +10,9 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", extra="ignore")
 
-    target_base_url: AnyHttpUrl = "https://openemr-js46.onrender.com"
-    target_chat_path: str = "/api/copilot/chat"
-    target_allowlist: str = "https://openemr-js46.onrender.com"
+    target_base_url: AnyHttpUrl = "https://clinical-copilot-0mgb.onrender.com"
+    target_chat_path: str = "/chat"
+    target_allowlist: str = "https://clinical-copilot-0mgb.onrender.com"
     campaign_budget_usd: float = 2.50
     agentforge_campaign_cadence: str = "weekly"
     database_path: str = "agentforge.db"

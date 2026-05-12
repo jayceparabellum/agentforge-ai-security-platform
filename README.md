@@ -2,7 +2,7 @@
 
 AgentForge is a deployable multi-agent adversarial evaluation platform for testing the deployed OpenEMR Clinical Co-Pilot target:
 
-`https://openemr-js46.onrender.com`
+`https://clinical-copilot-0mgb.onrender.com`
 
 This is a separate application, not an OpenEMR fork. It runs authorized adversarial campaigns against an allowlisted target, records independent judge verdicts, generates reviewable vulnerability reports, and keeps uncertain or confirmed findings in a regression loop.
 
@@ -13,10 +13,10 @@ This is a separate application, not an OpenEMR fork. It runs authorized adversar
 - Render services deployed: `agentforge-ai-security-platform`, `agentforge-weekly-campaign`, `agentforge-threat-intel-refresh`, `agentforge-regression-replay`, and `agentforge-target-probe`.
 - Deployment source: GitHub repo `jayceparabellum/agentforge-ai-security-platform`.
 - Original Gauntlet GitLab URL: `https://labs.gauntletai.com/jayceparabellum/agentforge-ai-security-platform`.
-- Target system: `https://openemr-js46.onrender.com`.
+- Target system: `https://clinical-copilot-0mgb.onrender.com`.
 - Local verification: passed on the Mac mini.
 - Smoke campaign: reached the deployed OpenEMR URL with HTTP 200 and generated six reviewable partial findings.
-- Important caveat: the exact deployed Clinical Co-Pilot chat endpoint still needs confirmation. Until `TARGET_CHAT_PATH` is updated, live attack attempts are recorded as `partial` integration findings rather than false passes.
+- Target route: red-team payloads are sent only to the allowlisted Clinical Co-Pilot target URL with `TARGET_CHAT_PATH=/chat`.
 
 ## What It Does
 
@@ -118,9 +118,9 @@ Deployed Blueprint services:
 Default environment:
 
 ```text
-TARGET_BASE_URL=https://openemr-js46.onrender.com
-TARGET_ALLOWLIST=https://openemr-js46.onrender.com
-TARGET_CHAT_PATH=/api/copilot/chat
+TARGET_BASE_URL=https://clinical-copilot-0mgb.onrender.com
+TARGET_ALLOWLIST=https://clinical-copilot-0mgb.onrender.com
+TARGET_CHAT_PATH=/chat
 AGENTFORGE_CAMPAIGN_CADENCE=weekly
 CAMPAIGN_BUDGET_USD=2.50
 THREAT_INTEL_MAX_GENERATED_CASES=12
@@ -188,4 +188,4 @@ It checks the allowlisted OpenEMR base URL plus likely Clinical Co-Pilot API pat
 
 ## Target Integration Note
 
-The OpenEMR application is reachable, but the actual Clinical Co-Pilot chat route may not be `/api/copilot/chat`. Set `TARGET_CHAT_PATH` in Render once the deployed route is known. The MVP intentionally marks incomplete target interactions as `partial` so the platform remains honest and reviewable.
+The Clinical Co-Pilot application is reachable, and the default chat route is `TARGET_CHAT_PATH=/chat`. Set `TARGET_CHAT_PATH` in Render if the deployed route changes. The MVP intentionally marks incomplete target interactions as `partial` so the platform remains honest and reviewable.
