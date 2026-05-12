@@ -4,11 +4,13 @@ from typing import Optional
 
 from agentforge.agents import DocumentationAgent, JudgeAgent, OrchestratorAgent, RedTeamAgent, ThreatIntelAgent
 from agentforge.config import Settings, get_settings
-from agentforge.models import AgentEvent, AgentTransition, AttackResult, MultiAgentRunSummary, TokenBudgetEntry
+from agentforge.models import AgentEvent, AgentTransition, AttackResult, LangfuseTrace, MultiAgentRunSummary, TokenBudgetEntry
 from agentforge.storage import (
+    create_approval_gate,
     record_agent_transition,
     record_budget_entry,
     record_event,
+    record_trace,
     save_attack_result,
     save_report,
     save_verdict,
@@ -202,6 +204,30 @@ class MultiAgentCore:
                     {"case_id": case.id, "report_id": report.id},
                 )
                 save_report(report)
+                if report.severity >= 5:
+                    approval = create_approval_gate(
+                        report,
+                        reason="Critical severity finding requires explicit human approval before closure.",
+                    )
+                    self._transition(
+                        "Documentation Agent",
+                        "Human Trust Boundary",
+                        brief.id,
+                        "halted",
+                        "ApprovalGate",
+                        {"report_id": report.id, "approval_id": approval.id, "severity": report.severity},
+                    )
+                    record_trace(
+                        LangfuseTrace(
+                            campaign_id=brief.id,
+                            agent="Human Trust Boundary",
+                            span_name="critical_approval_gate",
+                            event_type="approval_gate",
+                            status="warning",
+                            input_summary={"report_id": report.id, "case_id": case.id, "severity": report.severity},
+                            output_summary={"approval_id": approval.id, "status": approval.status},
+                        )
+                    )
             else:
                 self._transition(
                     "Judge Agent",
@@ -298,6 +324,17 @@ class MultiAgentCore:
                 status=status,
                 message_type=message_type,
                 payload_summary=payload_summary,
+            )
+        )
+        record_trace(
+            LangfuseTrace(
+                campaign_id=campaign_id,
+                agent=to_node,
+                span_name=f"{from_node} -> {to_node}",
+                event_type="agent_transition",
+                status="error" if status == "error" else ("warning" if status == "halted" else "ok"),
+                input_summary={"from_node": from_node, "message_type": message_type},
+                output_summary=payload_summary,
             )
         )
 

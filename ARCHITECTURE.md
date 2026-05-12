@@ -35,6 +35,8 @@ The deployed Clinical Co-Pilot application is reachable, and the current default
 | Layer 3 behavior | Persists vulnerability DB, coverage map, and token budget ledger in SQLite shared state |
 | Layer 4 behavior | Deterministic fuzzers generate prompt variants and regression replay reruns confirmed/partial findings |
 | Layer 5 behavior | Maintains the allowlisted OpenEMR target profile, probes likely endpoint paths, and records whether the deployed target integration is healthy, partial, or unreachable |
+| Layer 6 behavior | Records Langfuse-style traces and exposes coverage, verdict, and transition summaries |
+| Layer 7 behavior | Opens explicit human approval gates for critical-severity findings |
 | Target route | `TARGET_CHAT_PATH=/chat` for the deployed Clinical Co-Pilot service |
 
 ## System Diagram
@@ -67,6 +69,8 @@ The deployed Clinical Co-Pilot application is reachable, and the current default
 | Agent transition log | SQLite-backed `/api/agent-transitions` with graph node handoffs |
 | Deterministic tooling | `agentforge/deterministic.py` with fuzzer and regression replay harness |
 | Target system layer | `agentforge/target.py` with allowlist enforcement, health checks, endpoint probing, and target profile persistence |
+| Observability layer | SQLite-backed `langfuse_traces` table and `/api/observability` |
+| Human trust boundary | SQLite-backed `human_approvals` table and `/api/approvals` approval queue |
 | Seed evals | `agentforge/data/seed_cases.json` and `evals/seed_cases.json` |
 | Threat feeds | `agentforge/data/threat_feeds/*.json` snapshots |
 | Generated threat cases | `agentforge/data/generated_threat_cases.json` |
@@ -298,6 +302,18 @@ During a campaign, the ledger records budget entries for seed loading, orchestra
 
 ## Observability
 
+Layer 6 is implemented as an MVP observability layer. The assignment architecture calls for Langfuse; the MVP records Langfuse-style trace spans locally so the same trace shape can be sent to Langfuse later without changing agent responsibilities.
+
+The `langfuse_traces` table stores:
+
+- campaign ID
+- agent/span name
+- event type
+- status
+- input summary
+- output summary
+- timestamp
+
 The dashboard surfaces:
 
 - Attack categories tested.
@@ -308,10 +324,28 @@ The dashboard surfaces:
 - Token budget ledger summary.
 - Layer 4 fuzzing and regression replay state.
 - Agent trace events.
+- Layer 6 trace summaries.
+- Layer 7 approval queue state.
 
-The assignment architecture calls for Langfuse. This MVP keeps the data model Langfuse-ready while using SQLite for local replayability and deployment simplicity. The deployed dashboard has been confirmed to launch on Render, and the smoke campaign control has been used successfully after deployment.
+Layer 6 is exposed through:
+
+```text
+GET /api/observability
+```
+
+This MVP keeps the data model Langfuse-ready while using SQLite for local replayability and deployment simplicity. The deployed dashboard has been confirmed to launch on Render, and the smoke campaign control has been used successfully after deployment.
 
 ## Human Approval Gates
+
+Layer 7 is implemented as a human trust boundary. Critical-severity findings create explicit approval records in the `human_approvals` table. The dashboard exposes an approval queue so a reviewer can approve or reject the critical finding before treating it as accepted.
+
+Layer 7 is exposed through:
+
+```text
+GET /api/approvals
+POST /api/approvals/{approval_id}/approve
+POST /api/approvals/{approval_id}/reject
+```
 
 Human review is required for:
 

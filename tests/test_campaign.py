@@ -2,14 +2,18 @@ from agentforge.agents.judge import JudgeAgent
 from agentforge.agents.threat_intel import ThreatIntelAgent
 from agentforge.models import AttackCategory, AttackResult, ThreatFeedItem
 from agentforge.storage import (
+    create_approval_gate,
     fetch_agent_transitions,
+    fetch_approval_queue,
     fetch_generated_threat_cases,
+    fetch_observability,
     fetch_token_budget_ledger,
     fetch_vulnerability_db,
     record_budget_entry,
+    record_trace,
     save_threat_intel_state,
 )
-from agentforge.models import TokenBudgetEntry
+from agentforge.models import LangfuseTrace, TokenBudgetEntry, VulnerabilityReport
 from agentforge.config import get_settings
 from agentforge.deterministic import DeterministicFuzzer, run_fuzzer
 from agentforge.storage import fetch_layer4_state
@@ -163,3 +167,39 @@ def test_target_profile_persists(tmp_path, monkeypatch):
     state = fetch_target_state()
     assert state["profiles"][0]["base_url"] == "https://clinical-copilot-0mgb.onrender.com"
     assert state["profiles"][0]["integration_status"] == "partial"
+
+
+def test_observability_trace_persists(tmp_path, monkeypatch):
+    monkeypatch.setenv("DATABASE_PATH", str(tmp_path / "agentforge-layer6.db"))
+    get_settings.cache_clear()
+    record_trace(
+        LangfuseTrace(
+            campaign_id="campaign-test",
+            agent="Judge Agent",
+            span_name="Target System -> Judge Agent",
+            event_type="agent_transition",
+            input_summary={"case_id": "PI-001"},
+            output_summary={"verdict": "partial"},
+        )
+    )
+    state = fetch_observability()
+    assert state["traces"][0]["agent"] == "Judge Agent"
+    assert state["trace_summary"][0]["count"] == 1
+
+
+def test_critical_approval_gate_round_trip(tmp_path, monkeypatch):
+    monkeypatch.setenv("DATABASE_PATH", str(tmp_path / "agentforge-layer7.db"))
+    get_settings.cache_clear()
+    report = VulnerabilityReport(
+        id="AF-CRITICAL",
+        case_id="DE-001",
+        campaign_id="campaign-test",
+        title="Critical data exfiltration",
+        severity=5,
+        status="human_review",
+        markdown_path="reports/AF-CRITICAL.md",
+    )
+    approval = create_approval_gate(report, "Critical severity finding requires explicit approval.")
+    queue = fetch_approval_queue()
+    assert queue["approvals"][0]["id"] == approval.id
+    assert queue["approvals"][0]["status"] == "pending"

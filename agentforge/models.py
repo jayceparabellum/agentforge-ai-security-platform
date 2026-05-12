@@ -162,6 +162,32 @@ class TargetProbeResult(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
+class LangfuseTrace(BaseModel):
+    id: str = Field(default_factory=lambda: f"trace-{uuid4().hex[:10]}")
+    campaign_id: str
+    agent: str
+    span_name: str
+    event_type: Literal["agent_transition", "tool_call", "verdict", "report", "budget", "approval_gate"]
+    status: Literal["ok", "warning", "error"] = "ok"
+    input_summary: Dict[str, Any] = Field(default_factory=dict)
+    output_summary: Dict[str, Any] = Field(default_factory=dict)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class HumanApproval(BaseModel):
+    id: str = Field(default_factory=lambda: f"approval-{uuid4().hex[:10]}")
+    report_id: str
+    campaign_id: str
+    case_id: str
+    severity: int = Field(ge=1, le=5)
+    reason: str
+    status: Literal["pending", "approved", "rejected"] = "pending"
+    decided_by: Optional[str] = None
+    notes: str = ""
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    decided_at: Optional[datetime] = None
+
+
 class MultiAgentRunSummary(BaseModel):
     campaign_id: str
     graph_version: str

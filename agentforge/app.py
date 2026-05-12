@@ -8,9 +8,12 @@ from agentforge.campaign import run_campaign
 from agentforge.config import get_settings
 from agentforge.deterministic import run_fuzzer, run_regression_replay
 from agentforge.storage import (
+    decide_approval,
     fetch_agent_transitions,
+    fetch_approval_queue,
     fetch_dashboard,
     fetch_layer4_state,
+    fetch_observability,
     fetch_target_state,
     fetch_threat_intel_state,
     fetch_token_budget_ledger,
@@ -87,6 +90,26 @@ def provider_routes() -> dict:
     return get_settings().provider_routes
 
 
+@app.get("/api/observability")
+def observability() -> dict:
+    return fetch_observability()
+
+
+@app.get("/api/approvals")
+def approvals() -> dict:
+    return fetch_approval_queue()
+
+
+@app.post("/api/approvals/{approval_id}/approve")
+def approve_finding(approval_id: str, notes: str = "") -> dict:
+    return decide_approval(approval_id, "approved", notes=notes)
+
+
+@app.post("/api/approvals/{approval_id}/reject")
+def reject_finding(approval_id: str, notes: str = "") -> dict:
+    return decide_approval(approval_id, "rejected", notes=notes)
+
+
 @app.get("/api/layer4")
 def layer4_state() -> dict:
     return fetch_layer4_state()
@@ -153,6 +176,14 @@ def index() -> str:
         f"<tr><td>{row['method']}</td><td>{row['path']}</td><td>{row['last_status_code']}</td><td>{bool(row['reachable'])}</td><td>{bool(row['likely_chat_endpoint'])}</td></tr>"
         for row in data["target_probe_summary"]
     ) or "<tr><td colspan='5'>No target probes recorded yet.</td></tr>"
+    trace_rows = "".join(
+        f"<tr><td>{row['agent']}</td><td>{row['event_type']}</td><td>{row['status']}</td><td>{row['count']}</td></tr>"
+        for row in data["trace_summary"]
+    ) or "<tr><td colspan='4'>No Layer 6 traces recorded yet.</td></tr>"
+    approval_rows = "".join(
+        f"<tr><td>{row['report_id']}</td><td>{row['severity']}</td><td>{row['status']}</td><td>{row.get('title') or ''}</td><td><button onclick=\"runControl('/api/approvals/{row['id']}/approve', this)\">Approve</button> <button onclick=\"runControl('/api/approvals/{row['id']}/reject', this)\">Reject</button></td></tr>"
+        for row in data["approval_queue"]
+    ) or "<tr><td colspan='5'>No critical approvals pending.</td></tr>"
     return f"""
 <!doctype html>
 <html lang="en">
@@ -221,6 +252,10 @@ def index() -> str:
       <table><thead><tr><th>ID</th><th>Severity</th><th>Status</th><th>Title</th></tr></thead><tbody>{reports}</tbody></table>
     </section>
     <section>
+      <h2>Layer 7 Human Trust Boundary</h2>
+      <table><thead><tr><th>Report</th><th>Severity</th><th>Status</th><th>Title</th><th>Action</th></tr></thead><tbody>{approval_rows}</tbody></table>
+    </section>
+    <section>
       <h2>Token Budget Ledger</h2>
       <table><thead><tr><th>Campaign</th><th>Tokens</th><th>Spend</th><th>Budget</th><th>Threshold</th></tr></thead><tbody>{budget_rows}</tbody></table>
     </section>
@@ -229,6 +264,10 @@ def index() -> str:
       <table><thead><tr><th>Node</th><th>Status</th><th>Transitions</th></tr></thead><tbody>{transition_rows}</tbody></table>
       <h3>Provider Routes</h3>
       <table><thead><tr><th>Path</th><th>Provider</th><th>Model</th><th>Data Path</th></tr></thead><tbody>{provider_rows}</tbody></table>
+    </section>
+    <section>
+      <h2>Layer 6 Observability</h2>
+      <table><thead><tr><th>Agent</th><th>Event Type</th><th>Status</th><th>Count</th></tr></thead><tbody>{trace_rows}</tbody></table>
     </section>
     <section>
       <h2>Layer 4 Deterministic Tooling</h2>

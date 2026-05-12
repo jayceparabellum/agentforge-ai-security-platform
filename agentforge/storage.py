@@ -12,6 +12,8 @@ from agentforge.models import (
     AttackCase,
     AttackResult,
     FuzzCase,
+    HumanApproval,
+    LangfuseTrace,
     RegressionReplayResult,
     TargetProbeResult,
     TargetProfile,
@@ -157,6 +159,30 @@ CREATE TABLE IF NOT EXISTS target_probe_results (
   error TEXT,
   created_at TEXT NOT NULL
 );
+CREATE TABLE IF NOT EXISTS langfuse_traces (
+  id TEXT PRIMARY KEY,
+  campaign_id TEXT NOT NULL,
+  agent TEXT NOT NULL,
+  span_name TEXT NOT NULL,
+  event_type TEXT NOT NULL,
+  status TEXT NOT NULL,
+  input_summary TEXT NOT NULL,
+  output_summary TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS human_approvals (
+  id TEXT PRIMARY KEY,
+  report_id TEXT NOT NULL,
+  campaign_id TEXT NOT NULL,
+  case_id TEXT NOT NULL,
+  severity INTEGER NOT NULL,
+  reason TEXT NOT NULL,
+  status TEXT NOT NULL,
+  decided_by TEXT,
+  notes TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  decided_at TEXT
+);
 """
 
 
@@ -292,6 +318,129 @@ def record_agent_transition(transition: AgentTransition) -> None:
                 transition.created_at.isoformat(),
             ),
         )
+
+
+def record_trace(trace: LangfuseTrace) -> None:
+    with connect() as conn:
+        conn.execute(
+            """
+            INSERT OR REPLACE INTO langfuse_traces
+            (id, campaign_id, agent, span_name, event_type, status, input_summary, output_summary, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                trace.id,
+                trace.campaign_id,
+                trace.agent,
+                trace.span_name,
+                trace.event_type,
+                trace.status,
+                json.dumps(trace.input_summary),
+                json.dumps(trace.output_summary),
+                trace.created_at.isoformat(),
+            ),
+        )
+
+
+def create_approval_gate(report: VulnerabilityReport, reason: str) -> HumanApproval:
+    approval = HumanApproval(
+        report_id=report.id,
+        campaign_id=report.campaign_id,
+        case_id=report.case_id,
+        severity=report.severity,
+        reason=reason,
+    )
+    with connect() as conn:
+        conn.execute(
+            """
+            INSERT OR REPLACE INTO human_approvals
+            (id, report_id, campaign_id, case_id, severity, reason, status, decided_by, notes, created_at, decided_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                approval.id,
+                approval.report_id,
+                approval.campaign_id,
+                approval.case_id,
+                approval.severity,
+                approval.reason,
+                approval.status,
+                approval.decided_by,
+                approval.notes,
+                approval.created_at.isoformat(),
+                approval.decided_at.isoformat() if approval.decided_at else None,
+            ),
+        )
+    return approval
+
+
+def decide_approval(approval_id: str, status: str, decided_by: str = "human-review", notes: str = "") -> dict:
+    if status not in {"approved", "rejected"}:
+        raise ValueError("Approval status must be approved or rejected")
+    with connect() as conn:
+        conn.execute(
+            """
+            UPDATE human_approvals
+            SET status = ?, decided_by = ?, notes = ?, decided_at = datetime('now')
+            WHERE id = ?
+            """,
+            (status, decided_by, notes, approval_id),
+        )
+        row = conn.execute("SELECT * FROM human_approvals WHERE id = ?", (approval_id,)).fetchone()
+    if row is None:
+        return {"updated": False, "approval": None}
+    return {"updated": True, "approval": dict(row)}
+
+
+def fetch_approval_queue(limit: int = 100) -> dict:
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT ha.*, vr.title, vr.markdown_path
+            FROM human_approvals ha
+            LEFT JOIN vulnerability_reports vr ON vr.id = ha.report_id
+            ORDER BY
+              CASE ha.status WHEN 'pending' THEN 0 WHEN 'approved' THEN 1 ELSE 2 END,
+              ha.severity DESC,
+              ha.created_at DESC
+            LIMIT ?
+            """,
+            (limit,),
+        ).fetchall()
+        summary = conn.execute(
+            "SELECT status, COUNT(*) AS count FROM human_approvals GROUP BY status ORDER BY status"
+        ).fetchall()
+    return {"approvals": [dict(row) for row in rows], "summary": [dict(row) for row in summary]}
+
+
+def fetch_observability(limit: int = 100) -> dict:
+    with connect() as conn:
+        traces = conn.execute("SELECT * FROM langfuse_traces ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()
+        trace_summary = conn.execute(
+            """
+            SELECT agent, event_type, status, COUNT(*) AS count
+            FROM langfuse_traces
+            GROUP BY agent, event_type, status
+            ORDER BY agent, event_type, status
+            """
+        ).fetchall()
+        coverage = conn.execute("SELECT * FROM coverage_map ORDER BY category").fetchall()
+        verdicts = conn.execute("SELECT verdict, COUNT(*) AS count FROM verdicts GROUP BY verdict ORDER BY verdict").fetchall()
+        transitions = conn.execute(
+            """
+            SELECT to_node AS node, status, COUNT(*) AS count
+            FROM agent_transitions
+            GROUP BY to_node, status
+            ORDER BY node, status
+            """
+        ).fetchall()
+    return {
+        "traces": [dict(row) for row in traces],
+        "trace_summary": [dict(row) for row in trace_summary],
+        "coverage_map": [dict(row) for row in coverage],
+        "verdict_summary": [dict(row) for row in verdicts],
+        "transition_summary": [dict(row) for row in transitions],
+    }
 
 
 def fetch_agent_transitions(campaign_id: str | None = None, limit: int = 100) -> dict:
@@ -720,6 +869,30 @@ def fetch_dashboard() -> dict:
             """,
             (target_url,),
         ).fetchall()
+        trace_summary = conn.execute(
+            """
+            SELECT agent, event_type, status, COUNT(*) AS count
+            FROM langfuse_traces
+            GROUP BY agent, event_type, status
+            ORDER BY agent, event_type, status
+            LIMIT 20
+            """
+        ).fetchall()
+        approval_rows = conn.execute(
+            """
+            SELECT ha.*, vr.title
+            FROM human_approvals ha
+            LEFT JOIN vulnerability_reports vr ON vr.id = ha.report_id
+            ORDER BY
+              CASE ha.status WHEN 'pending' THEN 0 WHEN 'approved' THEN 1 ELSE 2 END,
+              ha.severity DESC,
+              ha.created_at DESC
+            LIMIT 10
+            """
+        ).fetchall()
+        approval_summary = conn.execute(
+            "SELECT status, COUNT(*) AS count FROM human_approvals GROUP BY status ORDER BY status"
+        ).fetchall()
         cost = conn.execute("SELECT COALESCE(SUM(cost_estimate_usd), 0) AS cost FROM attack_results").fetchone()["cost"]
         last = conn.execute("SELECT campaign_id FROM events ORDER BY id DESC LIMIT 1").fetchone()
     verdict_counts = {row["verdict"]: row["count"] for row in verdict_rows}
@@ -750,6 +923,9 @@ def fetch_dashboard() -> dict:
         "regression_summary": [dict(row) for row in replay_summary],
         "target_profiles": [dict(row) for row in target_profiles],
         "target_probe_summary": [dict(row) for row in target_probe_summary],
+        "trace_summary": [dict(row) for row in trace_summary],
+        "approval_queue": [dict(row) for row in approval_rows],
+        "approval_summary": [dict(row) for row in approval_summary],
     }
 
 

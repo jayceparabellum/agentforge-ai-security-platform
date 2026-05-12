@@ -16,9 +16,11 @@ Layer 4 adds deterministic pressure to the threat model. Fuzzing checks whether 
 
 Layer 5 makes the deployed target itself part of the security model. AgentForge stores an allowlisted OpenEMR target profile, probes the base application and likely Clinical Co-Pilot API paths, and records whether the integration is `healthy`, `partial`, or `unreachable`. This keeps campaign results honest: a missing or changed endpoint is not treated as a pass, and the system does not send adversarial traffic to any URL outside `TARGET_ALLOWLIST`.
 
+Layer 6 and Layer 7 make the evaluation auditable and reviewable. Layer 6 records Langfuse-style traces for agent handoffs, verdicts, and approval events so campaigns can be reconstructed after the fact. Layer 7 creates a human approval gate for critical-severity findings so severe results are not silently accepted without review.
+
 Trust boundaries are explicit. The deployed OpenEMR target is allowlisted. The adversarial platform must not be repointed at unauthorized systems. Attack generation is synthetic and bounded by budget. The Judge is isolated from the Red Team so it is not influenced by the attacker’s explanation of why an exploit should count. Critical-severity findings and low-confidence verdicts are routed to a human review queue. Reports are written for reproducibility, not drama: each one must include a minimal attack sequence, expected behavior, observed behavior, severity, and remediation guidance.
 
-For the MVP, the deployed Clinical Co-Pilot application is live at `https://clinical-copilot-0mgb.onrender.com`, and red-team payloads are scoped to that allowlisted target. The default chat route is `/chat`; if that route changes, AgentForge records incomplete target interaction as a partial finding instead of falsely claiming success or safety.
+For the MVP, the key implementation risk is target integration. The OpenEMR application is live at `https://openemr-js46.onrender.com`, but the exact Clinical Co-Pilot chat endpoint may differ from the default adapter path. Until that route is confirmed, AgentForge records incomplete target interaction as a partial finding instead of falsely claiming success or safety. Once the chat route is configured, the same attack cases and judge rubrics become live regression tests.
 
 ## Attack Surface Map
 
@@ -39,6 +41,8 @@ For the MVP, the deployed Clinical Co-Pilot application is live at `https://clin
 - Tool calls must be authorized outside the LLM.
 - Target URL must remain allowlisted.
 - Target probes must remain benign and limited to the authorized OpenEMR deployment.
+- Critical-severity findings require an explicit Layer 7 approval decision.
+- Observability traces must not store full PHI payloads; they store summaries and IDs.
 - Critical reports require human approval.
 - Vulnerability and budget state are persisted in shared state so review decisions are auditable.
 

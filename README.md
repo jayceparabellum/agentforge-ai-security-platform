@@ -31,6 +31,8 @@ This is a separate application, not an OpenEMR fork. It runs authorized adversar
 - Records Layer 2 provider routes: Red Team through OpenRouter, Judge through direct Anthropic, Documentation configurable, and local fallback through Ollama.
 - Provides Layer 4 deterministic tooling: fuzzers and regression replay.
 - Provides Layer 5 target-system profiling and endpoint probing for the deployed OpenEMR application.
+- Provides Layer 6 observability with Langfuse-style traces and coverage dashboard state.
+- Provides Layer 7 critical-severity human approval gates.
 - Stores agent traces, attack results, verdicts, and report metadata in SQLite.
 - Provides a FastAPI dashboard and JSON API for reviewing findings.
 - Ships with a Dockerfile and Render Blueprint config.
@@ -185,6 +187,8 @@ It checks the allowlisted OpenEMR base URL plus likely Clinical Co-Pilot API pat
 - `/api/provider-routes`: Layer 2 provider/data-hop routing plan.
 - `/api/layer4`: deterministic fuzzing and regression replay state.
 - `/api/target`: Layer 5 target profile and endpoint probe state.
+- `/api/observability`: Layer 6 traces, coverage, verdict, and transition summaries.
+- `/api/approvals`: Layer 7 critical-severity approval queue.
 
 ## Target Integration Note
 

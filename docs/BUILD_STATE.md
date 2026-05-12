@@ -171,3 +171,33 @@ python -m agentforge.run_target_probe
 MVP substitution:
 
 - Layer 5 uses lightweight endpoint probing rather than authenticated OpenEMR workflow automation. This keeps the probe benign and low-cost while making the target integration state visible before campaigns spend tokens.
+
+## Layer 6: Observability
+
+Status: implemented for MVP.
+
+Current behavior:
+
+- Agent transitions are mirrored into Langfuse-style trace rows.
+- Trace rows store campaign ID, agent/span, event type, status, input summary, output summary, and timestamp.
+- The dashboard exposes Layer 6 trace summaries.
+- `/api/observability` exposes traces, trace summaries, coverage map, verdict summaries, and transition summaries.
+
+MVP substitution:
+
+- Uses SQLite-backed trace rows instead of hosted Langfuse. The trace shape is intentionally Langfuse-ready for a later integration.
+
+## Layer 7: Human Trust Boundary
+
+Status: implemented for MVP.
+
+Current behavior:
+
+- Critical-severity reports create explicit approval records.
+- The dashboard exposes a Layer 7 Human Trust Boundary panel.
+- Reviewers can approve or reject critical findings through API/dashboard actions.
+- `/api/approvals` exposes the approval queue.
+
+MVP substitution:
+
+- Uses a local approval queue instead of a full identity-backed workflow. It preserves the critical-severity approval gate required by the architecture while keeping the demo lightweight.
