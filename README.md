@@ -8,7 +8,9 @@ This is a separate application, not an OpenEMR fork. It runs authorized adversar
 
 ## Current Build State
 
-- Status: MVP build complete and Render Blueprint deployment in progress.
+- Status: MVP build complete and deployed on Render.
+- Render Blueprint ID: `exs-d81aqof7f7vs73dfgng0`.
+- Render services deployed: `agentforge-ai-security-platform` and `agentforge-weekly-campaign`.
 - Deployment source: GitHub repo `jayceparabellum/agentforge-ai-security-platform`.
 - Original Gauntlet GitLab URL: `https://labs.gauntletai.com/jayceparabellum/agentforge-ai-security-platform`.
 - Target system: `https://openemr-js46.onrender.com`.
@@ -70,7 +72,13 @@ python -m agentforge.run_campaign --intensity smoke
 
 Render deploys this repo through `render.yaml`.
 
-Expected Blueprint services:
+Active Blueprint:
+
+```text
+exs-d81aqof7f7vs73dfgng0
+```
+
+Deployed Blueprint services:
 
 - `agentforge-ai-security-platform`: web dashboard/API.
 - `agentforge-weekly-campaign`: weekly scheduled campaign runner.
@@ -116,4 +124,3 @@ That runs every Monday at 06:00 UTC. Weekly is recommended for the assignment be
 ## Target Integration Note
 
 The OpenEMR application is reachable, but the actual Clinical Co-Pilot chat route may not be `/api/copilot/chat`. Set `TARGET_CHAT_PATH` in Render once the deployed route is known. The MVP intentionally marks incomplete target interactions as `partial` so the platform remains honest and reviewable.
-
