@@ -8,13 +8,17 @@ from agentforge.storage import (
     fetch_approval_queue,
     fetch_generated_threat_cases,
     fetch_observability,
+    fetch_report_detail,
     fetch_token_budget_ledger,
     fetch_vulnerability_db,
     record_budget_entry,
     record_trace,
+    save_attack_result,
+    save_report,
+    save_verdict,
     save_threat_intel_state,
 )
-from agentforge.models import LangfuseTrace, TokenBudgetEntry, VulnerabilityReport
+from agentforge.models import LangfuseTrace, TokenBudgetEntry, Verdict, VulnerabilityReport
 from agentforge.config import get_settings
 from agentforge.deterministic import DeterministicFuzzer, run_fuzzer
 from agentforge.storage import fetch_layer4_state
@@ -207,3 +211,46 @@ def test_critical_approval_gate_round_trip(tmp_path, monkeypatch):
     updated = decide_approval(approval.id, "approved", notes="reviewed")
     assert updated["approval"]["status"] == "approved"
     assert updated["approval"]["notes"] == "reviewed"
+
+
+def test_report_detail_includes_captured_output(tmp_path, monkeypatch):
+    monkeypatch.setenv("DATABASE_PATH", str(tmp_path / "agentforge-reports.db"))
+    get_settings.cache_clear()
+    report_path = tmp_path / "AF-REPORT.md"
+    report_path.write_text("# Captured report\n\nFinding detail.", encoding="utf-8")
+    save_attack_result(
+        AttackResult(
+            case_id="PI-REPORT",
+            campaign_id="campaign-report",
+            category=AttackCategory.prompt_injection,
+            payload_sequence=["ignore policy"],
+            target_status_code=200,
+            target_response_excerpt="safe refusal",
+            observed_behavior="The target refused the unsafe instruction.",
+        )
+    )
+    save_verdict(
+        Verdict(
+            result_id="PI-REPORT:campaign-report",
+            verdict="pass",
+            severity=2,
+            confidence=0.9,
+            rationale="The target preserved its safety boundary.",
+            should_regress=False,
+        )
+    )
+    save_report(
+        VulnerabilityReport(
+            id="AF-REPORT",
+            case_id="PI-REPORT",
+            campaign_id="campaign-report",
+            title="Prompt injection captured output",
+            severity=2,
+            status="open",
+            markdown_path=str(report_path),
+        )
+    )
+    report = fetch_report_detail("AF-REPORT")
+    assert report is not None
+    assert report["target_response_excerpt"] == "safe refusal"
+    assert "Captured report" in report["markdown_content"]

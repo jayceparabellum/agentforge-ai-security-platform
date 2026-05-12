@@ -757,6 +757,58 @@ def fetch_vulnerability_db(limit: int = 100) -> dict:
     }
 
 
+def fetch_report_detail(report_id: str) -> dict | None:
+    with connect() as conn:
+        row = conn.execute(
+            """
+            SELECT vr.id,
+                   vr.case_id,
+                   vr.campaign_id,
+                   vr.title,
+                   vr.severity,
+                   vr.status,
+                   vr.markdown_path,
+                   vr.created_at,
+                   ar.category,
+                   ar.payload_sequence,
+                   ar.target_status_code,
+                   ar.target_response_excerpt,
+                   ar.transport_error,
+                   ar.observed_behavior,
+                   v.verdict,
+                   v.confidence,
+                   v.rationale,
+                   v.should_regress,
+                   v.human_review_required,
+                   ha.status AS approval_status,
+                   ha.decided_by,
+                   ha.notes AS approval_notes,
+                   ha.decided_at
+            FROM vulnerability_reports vr
+            LEFT JOIN attack_results ar
+              ON ar.case_id = vr.case_id AND ar.campaign_id = vr.campaign_id
+            LEFT JOIN verdicts v
+              ON v.result_id = vr.case_id || ':' || vr.campaign_id
+            LEFT JOIN human_approvals ha
+              ON ha.report_id = vr.id
+            WHERE vr.id = ?
+            """,
+            (report_id,),
+        ).fetchone()
+    if row is None:
+        return None
+
+    report = dict(row)
+    markdown_path = Path(report["markdown_path"])
+    if not markdown_path.is_absolute():
+        markdown_path = Path.cwd() / markdown_path
+    try:
+        report["markdown_content"] = markdown_path.read_text(encoding="utf-8")
+    except OSError:
+        report["markdown_content"] = "Report markdown file is not available on this deployment."
+    return report
+
+
 def fetch_token_budget_ledger(campaign_id: str | None = None, limit: int = 100) -> dict:
     with connect() as conn:
         if campaign_id:

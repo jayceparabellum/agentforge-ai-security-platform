@@ -1,6 +1,9 @@
 from __future__ import annotations
 
-from fastapi import BackgroundTasks, FastAPI
+import html
+from typing import Optional
+
+from fastapi import BackgroundTasks, FastAPI, HTTPException
 from fastapi.responses import HTMLResponse
 
 from agentforge.agents.threat_intel import ThreatIntelAgent
@@ -14,6 +17,7 @@ from agentforge.storage import (
     fetch_dashboard,
     fetch_layer4_state,
     fetch_observability,
+    fetch_report_detail,
     fetch_target_state,
     fetch_threat_intel_state,
     fetch_token_budget_ledger,
@@ -76,12 +80,12 @@ def vulnerability_db() -> dict:
 
 
 @app.get("/api/budget-ledger")
-def budget_ledger(campaign_id: str | None = None) -> dict:
+def budget_ledger(campaign_id: Optional[str] = None) -> dict:
     return fetch_token_budget_ledger(campaign_id=campaign_id)
 
 
 @app.get("/api/agent-transitions")
-def agent_transitions(campaign_id: str | None = None) -> dict:
+def agent_transitions(campaign_id: Optional[str] = None) -> dict:
     return fetch_agent_transitions(campaign_id=campaign_id)
 
 
@@ -100,6 +104,14 @@ def approvals() -> dict:
     return fetch_approval_queue()
 
 
+@app.get("/api/reports/{report_id}")
+def report_detail_api(report_id: str) -> dict:
+    report = fetch_report_detail(report_id)
+    if report is None:
+        raise HTTPException(status_code=404, detail="Report not found")
+    return {"report": report}
+
+
 @app.post("/api/approvals/{approval_id}/approve")
 def approve_finding(approval_id: str, notes: str = "") -> dict:
     return decide_approval(approval_id, "approved", notes=notes)
@@ -108,6 +120,127 @@ def approve_finding(approval_id: str, notes: str = "") -> dict:
 @app.post("/api/approvals/{approval_id}/reject")
 def reject_finding(approval_id: str, notes: str = "") -> dict:
     return decide_approval(approval_id, "rejected", notes=notes)
+
+
+@app.get("/reports", response_class=HTMLResponse)
+def reports_index() -> str:
+    data = fetch_vulnerability_db(limit=200)
+    report_rows = "".join(
+        f"<tr><td><a href='/reports/{html.escape(row['id'])}'>{html.escape(row['id'])}</a></td>"
+        f"<td>{row['severity']}</td><td>{html.escape(row['status'])}</td>"
+        f"<td>{html.escape(row['title'])}</td><td>{html.escape(row.get('campaign_id') or '')}</td>"
+        f"<td>{html.escape(row.get('verdict') or '')}</td></tr>"
+        for row in data["findings"]
+    ) or "<tr><td colspan='6'>No captured reports yet. Run a smoke campaign to generate findings.</td></tr>"
+    return f"""
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AgentForge Reports</title>
+  <style>
+    :root {{ color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif; }}
+    body {{ margin: 0; background: #f6f7f9; color: #18202a; }}
+    header {{ padding: 28px 36px; background: #111827; color: white; }}
+    h1 {{ margin: 0; font-size: 28px; letter-spacing: 0; }}
+    header p {{ margin: 8px 0 0; color: #cbd5e1; max-width: 880px; }}
+    main {{ padding: 28px 36px; }}
+    section {{ background: white; border: 1px solid #dde3ea; border-radius: 8px; padding: 20px; }}
+    table {{ width: 100%; border-collapse: collapse; }}
+    th, td {{ text-align: left; padding: 10px 8px; border-bottom: 1px solid #e5e7eb; font-size: 14px; }}
+    a {{ color: #1d4ed8; font-weight: 650; text-decoration: none; }}
+    .button-link {{ display: inline-block; background: #2563eb; color: white; border-radius: 6px; padding: 10px 14px; margin-top: 14px; }}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Captured Output Reports</h1>
+    <p>Full findings generated after the agentic workflow captures target responses, judge verdicts, approval state, and markdown report output.</p>
+  </header>
+  <main>
+    <section>
+      <table><thead><tr><th>Report</th><th>Severity</th><th>Status</th><th>Title</th><th>Campaign</th><th>Verdict</th></tr></thead><tbody>{report_rows}</tbody></table>
+      <a class="button-link" href="/">Back to Dashboard</a>
+    </section>
+  </main>
+</body>
+</html>
+"""
+
+
+@app.get("/reports/{report_id}", response_class=HTMLResponse)
+def report_detail(report_id: str) -> str:
+    report = fetch_report_detail(report_id)
+    if report is None:
+        raise HTTPException(status_code=404, detail="Report not found")
+    payload_sequence = html.escape(report.get("payload_sequence") or "[]")
+    markdown_content = html.escape(report.get("markdown_content") or "")
+    return f"""
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{html.escape(report['id'])} | AgentForge</title>
+  <style>
+    :root {{ color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif; }}
+    body {{ margin: 0; background: #f6f7f9; color: #18202a; }}
+    header {{ padding: 28px 36px; background: #111827; color: white; }}
+    h1 {{ margin: 0; font-size: 28px; letter-spacing: 0; }}
+    header p {{ margin: 8px 0 0; color: #cbd5e1; max-width: 980px; }}
+    main {{ padding: 28px 36px; display: grid; gap: 22px; }}
+    section {{ background: white; border: 1px solid #dde3ea; border-radius: 8px; padding: 20px; }}
+    .grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }}
+    .metric {{ border: 1px solid #e3e8ef; border-radius: 8px; padding: 14px; background: #fbfcfd; }}
+    .metric span {{ display: block; color: #526070; font-size: 13px; }}
+    .metric strong {{ display: block; margin-top: 6px; font-size: 18px; overflow-wrap: anywhere; }}
+    pre {{ white-space: pre-wrap; overflow-wrap: anywhere; background: #0f172a; color: #e5edf7; border-radius: 8px; padding: 18px; line-height: 1.5; }}
+    a {{ color: #1d4ed8; font-weight: 650; text-decoration: none; }}
+    .button-link {{ display: inline-block; background: #2563eb; color: white; border-radius: 6px; padding: 10px 14px; }}
+  </style>
+</head>
+<body>
+  <header>
+    <h1>{html.escape(report['id'])}</h1>
+    <p>{html.escape(report['title'])}</p>
+  </header>
+  <main>
+    <section>
+      <div class="grid">
+        <div class="metric"><span>Campaign</span><strong>{html.escape(report['campaign_id'])}</strong></div>
+        <div class="metric"><span>Case</span><strong>{html.escape(report['case_id'])}</strong></div>
+        <div class="metric"><span>Severity</span><strong>{report['severity']}</strong></div>
+        <div class="metric"><span>Status</span><strong>{html.escape(report['status'])}</strong></div>
+        <div class="metric"><span>Verdict</span><strong>{html.escape(report.get('verdict') or 'unknown')}</strong></div>
+        <div class="metric"><span>Approval</span><strong>{html.escape(report.get('approval_status') or 'not required')}</strong></div>
+      </div>
+    </section>
+    <section>
+      <h2>Workflow Result</h2>
+      <p><strong>Observed behavior:</strong> {html.escape(report.get('observed_behavior') or '')}</p>
+      <p><strong>Judge rationale:</strong> {html.escape(report.get('rationale') or '')}</p>
+      <p><strong>Target status:</strong> {html.escape(str(report.get('target_status_code') or 'n/a'))}</p>
+      <p><strong>Transport error:</strong> {html.escape(report.get('transport_error') or 'none')}</p>
+    </section>
+    <section>
+      <h2>Attack Payload Sequence</h2>
+      <pre>{payload_sequence}</pre>
+    </section>
+    <section>
+      <h2>Target Response Excerpt</h2>
+      <pre>{html.escape(report.get('target_response_excerpt') or '')}</pre>
+    </section>
+    <section>
+      <h2>Markdown Report Output</h2>
+      <pre>{markdown_content}</pre>
+      <a class="button-link" href="/reports">All Reports</a>
+      <a class="button-link" href="/">Dashboard</a>
+    </section>
+  </main>
+</body>
+</html>
+"""
 
 
 @app.get("/api/layer4")
@@ -129,9 +262,9 @@ async def layer4_regression(intensity: str = "smoke") -> dict:
 def index() -> str:
     data = fetch_dashboard()
     reports = "".join(
-        f"<tr><td>{row['id']}</td><td>{row['severity']}</td><td>{row['status']}</td><td>{row['title']}</td></tr>"
+        f"<tr><td><a href='/reports/{html.escape(row['id'])}'>{html.escape(row['id'])}</a></td><td>{row['severity']}</td><td>{html.escape(row['status'])}</td><td>{html.escape(row['title'])}</td><td><a href='/reports/{html.escape(row['id'])}'>View full report</a></td></tr>"
         for row in data["reports"]
-    ) or "<tr><td colspan='4'>No reports yet. Run a campaign to populate review findings.</td></tr>"
+    ) or "<tr><td colspan='5'>No reports yet. Run a campaign to populate review findings.</td></tr>"
     events = "".join(
         f"<li><strong>{row['agent']}</strong> {row['action']} <code>{row['campaign_id']}</code></li>"
         for row in data["events"][:10]
@@ -205,8 +338,11 @@ def index() -> str:
     .metric strong {{ display: block; margin-top: 6px; font-size: 24px; }}
     table {{ width: 100%; border-collapse: collapse; }}
     th, td {{ text-align: left; padding: 10px 8px; border-bottom: 1px solid #e5e7eb; font-size: 14px; }}
-    button {{ background: #2563eb; color: white; border: 0; border-radius: 6px; padding: 10px 14px; cursor: pointer; }}
+    button, .button-link {{ background: #2563eb; color: white; border: 0; border-radius: 6px; padding: 10px 14px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; min-height: 20px; }}
+    .control-row {{ display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }}
+    .secondary-control {{ background: #1f6f5b; }}
     code {{ background: #eef2f7; padding: 2px 5px; border-radius: 4px; }}
+    a {{ color: #1d4ed8; font-weight: 650; text-decoration: none; }}
   </style>
 </head>
 <body>
@@ -218,11 +354,15 @@ def index() -> str:
     <section>
       <h2>Campaign Controls</h2>
       <p>Target: <code>{get_settings().target_base_url}</code> | Cadence: <code>{get_settings().agentforge_campaign_cadence}</code> | Budget: <code>${get_settings().campaign_budget_usd}</code></p>
-      <button onclick="runControl('/api/campaigns/run?intensity=smoke', this)">Run Smoke Campaign</button>
-      <button onclick="runControl('/api/threat-intel/refresh', this)">Refresh Threat Intel</button>
-      <button onclick="runControl('/api/layer4/fuzz', this)">Run Fuzzer</button>
-      <button onclick="runControl('/api/layer4/regression', this)">Replay Regressions</button>
-      <button onclick="runControl('/api/target/probe', this)">Probe Target</button>
+      <div class="control-row">
+        <button onclick="runControl('/api/threat-intel/refresh', this)">Layer 1 Refresh Intel</button>
+        <button onclick="runControl('/api/campaigns/run?intensity=smoke', this)">Layer 2 Run Agent Workflow</button>
+        <a class="button-link" href="#shared-state">Layer 3 Shared State</a>
+        <button onclick="runControl('/api/layer4/fuzz', this)">Layer 4 Run Fuzzer</button>
+        <button class="secondary-control" onclick="runControl('/api/layer4/regression', this)">Layer 4 Replay Regressions</button>
+        <button onclick="runControl('/api/target/probe', this)">Layer 5 Probe Target</button>
+        <a class="button-link" href="/reports">Layer 6 Reports</a>
+      </div>
       <span id="control-status" role="status"></span>
     </section>
     <section>
@@ -241,7 +381,7 @@ def index() -> str:
         {categories}
       </div>
     </section>
-    <section>
+    <section id="shared-state">
       <h2>Threat Intelligence Shared State</h2>
       <table><thead><tr><th>Source</th><th>Items</th><th>Last Fetched</th></tr></thead><tbody>{threat_sources}</tbody></table>
       <h3>Coverage Map</h3>
@@ -249,7 +389,7 @@ def index() -> str:
     </section>
     <section>
       <h2>Review Queue</h2>
-      <table><thead><tr><th>ID</th><th>Severity</th><th>Status</th><th>Title</th></tr></thead><tbody>{reports}</tbody></table>
+      <table><thead><tr><th>ID</th><th>Severity</th><th>Status</th><th>Title</th><th>Report</th></tr></thead><tbody>{reports}</tbody></table>
     </section>
     <section>
       <h2>Layer 7 Human Trust Boundary</h2>
