@@ -3,6 +3,7 @@ from agentforge.agents.threat_intel import ThreatIntelAgent
 from agentforge.models import AttackCategory, AttackResult, ThreatFeedItem
 from agentforge.storage import (
     create_approval_gate,
+    decide_approval,
     fetch_agent_transitions,
     fetch_approval_queue,
     fetch_generated_threat_cases,
@@ -203,3 +204,6 @@ def test_critical_approval_gate_round_trip(tmp_path, monkeypatch):
     queue = fetch_approval_queue()
     assert queue["approvals"][0]["id"] == approval.id
     assert queue["approvals"][0]["status"] == "pending"
+    updated = decide_approval(approval.id, "approved", notes="reviewed")
+    assert updated["approval"]["status"] == "approved"
+    assert updated["approval"]["notes"] == "reviewed"
