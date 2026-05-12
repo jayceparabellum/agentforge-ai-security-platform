@@ -10,6 +10,7 @@ from agentforge.agents.threat_intel import ThreatIntelAgent
 from agentforge.campaign import run_campaign
 from agentforge.config import get_settings
 from agentforge.deterministic import run_fuzzer, run_regression_replay
+from agentforge.evaluation import evaluate_golden_cases
 from agentforge.storage import (
     decide_approval,
     fetch_agent_transitions,
@@ -51,6 +52,11 @@ async def target_probe() -> dict:
 @app.get("/api/dashboard")
 def dashboard_api() -> dict:
     return fetch_dashboard()
+
+
+@app.get("/api/evals/progress")
+def eval_progress() -> dict:
+    return evaluate_golden_cases(write_latest=False)
 
 
 @app.post("/api/campaigns/run")
@@ -351,6 +357,15 @@ def index() -> str:
         f"<tr><td>{row['report_id']}</td><td>{row['severity']}</td><td>{row['status']}</td><td>{row.get('title') or ''}</td><td><button onclick=\"runControl('/api/approvals/{row['id']}/approve', this)\">Approve</button> <button onclick=\"runControl('/api/approvals/{row['id']}/reject', this)\">Reject</button></td></tr>"
         for row in data["approval_queue"]
     ) or "<tr><td colspan='5'>No critical approvals pending.</td></tr>"
+    evals = evaluate_golden_cases(write_latest=False)
+    eval_category_rows = "".join(
+        f"<tr><td>{category.replace('_', ' ')}</td><td>{count}</td></tr>"
+        for category, count in evals["category_counts"].items()
+    )
+    eval_quality_rows = "".join(
+        f"<tr><td>{name.replace('_', ' ')}</td><td>{'Pass' if passed else 'Needs attention'}</td></tr>"
+        for name, passed in evals["quality_checks"].items()
+    )
     return f"""
 <!doctype html>
 <html lang="en">
@@ -401,6 +416,7 @@ def index() -> str:
       <a href="#target-system">Target System</a>
       <a href="#shared-state">Shared State</a>
       <a href="#review-queue">Review Queue</a>
+      <a href="#eval-progress">Eval Progress</a>
       <a href="#observability">Observability</a>
       <a href="/reports">Output Reports</a>
     </aside>
@@ -445,6 +461,19 @@ def index() -> str:
     <section id="review-queue">
       <h2>Review Queue</h2>
       <table><thead><tr><th>ID</th><th>Severity</th><th>Status</th><th>Title</th><th>Report</th></tr></thead><tbody>{reports}</tbody></table>
+    </section>
+    <section id="eval-progress">
+      <h2>Eval Progress</h2>
+      <div class="grid">
+        <div class="metric"><span>Suite</span><strong>{evals['suite']}</strong></div>
+        <div class="metric"><span>Golden Cases</span><strong>{evals['total_cases']}</strong></div>
+        <div class="metric"><span>Readiness</span><strong>{evals['readiness_percent']}%</strong></div>
+        <div class="metric"><span>Status</span><strong>{evals['status'].replace('_', ' ')}</strong></div>
+      </div>
+      <h3>Category Coverage</h3>
+      <table><thead><tr><th>Category</th><th>Golden Cases</th></tr></thead><tbody>{eval_category_rows}</tbody></table>
+      <h3>Quality Gates</h3>
+      <table><thead><tr><th>Check</th><th>Status</th></tr></thead><tbody>{eval_quality_rows}</tbody></table>
     </section>
     <section>
       <h2>Human Review</h2>

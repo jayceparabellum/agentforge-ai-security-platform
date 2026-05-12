@@ -1,0 +1,99 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1050" viewBox="0 0 1600 1050">
+  <defs>
+    <style>
+      .title { font: 700 26px Arial, sans-serif; fill: #102033; }
+      .h { font: 700 20px Arial, sans-serif; fill: #102033; }
+      .t { font: 15px Arial, sans-serif; fill: #1f2933; }
+      .small { font: 13px Arial, sans-serif; fill: #334155; }
+      .box { stroke-width: 2; rx: 14; ry: 14; }
+      .source { fill: #ffffff; stroke: #1d4ed8; }
+      .state { fill: #ecfdf3; stroke: #16a34a; }
+      .agent { fill: #fff1f1; stroke: #ef4444; }
+      .tool { fill: #f4ecff; stroke: #7c3aed; }
+      .target { fill: #fff7ed; stroke: #f97316; }
+      .obs { fill: #ecfeff; stroke: #06b6d4; }
+      .human { fill: #f8fafc; stroke: #64748b; }
+      .eval { fill: #fefce8; stroke: #ca8a04; }
+      .arrow { stroke: #111827; stroke-width: 2; fill: none; marker-end: url(#arrow); }
+      .dash { stroke-dasharray: 8 7; }
+    </style>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M 0 0 L 12 6 L 0 12 z" fill="#111827"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="1600" height="1050" fill="#ffffff"/>
+  <text x="34" y="42" class="title">AgentForge AI Security Platform - Current Build Architecture</text>
+  <text x="34" y="68" class="small">Deployed target: https://clinical-copilot-0mgb.onrender.com/chat | Render web app + scheduled jobs | GitHub deployment source</text>
+
+  <rect x="470" y="95" width="1080" height="265" class="box source"/>
+  <text x="500" y="128" class="h">Threat Intelligence Layer</text>
+  <text x="500" y="154" class="small">Scheduled refresh, feed snapshots, deterministic normalization into attack seeds</text>
+  <rect x="500" y="185" width="190" height="50" class="box source"/><text x="520" y="216" class="t">NVD CVE 2.0</text>
+  <rect x="705" y="185" width="190" height="50" class="box source"/><text x="724" y="216" class="t">MITRE CVE List</text>
+  <rect x="910" y="185" width="190" height="50" class="box source"/><text x="928" y="216" class="t">CISA KEV</text>
+  <rect x="1115" y="185" width="190" height="50" class="box source"/><text x="1130" y="216" class="t">GitHub Advisories</text>
+  <rect x="1320" y="185" width="190" height="50" class="box source"/><text x="1372" y="216" class="t">OSV.dev</text>
+  <rect x="560" y="255" width="210" height="50" class="box source"/><text x="580" y="286" class="t">OWASP LLM Top 10</text>
+  <rect x="790" y="255" width="210" height="50" class="box source"/><text x="836" y="286" class="t">NIST AI RMF</text>
+  <rect x="1020" y="255" width="210" height="50" class="box source"/><text x="1070" y="286" class="t">MITRE ATLAS</text>
+  <rect x="770" y="320" width="300" height="48" class="box source"/><text x="795" y="350" class="t">Threat Intel Agent normalize</text>
+
+  <rect x="390" y="410" width="720" height="155" class="box state"/>
+  <text x="420" y="443" class="h">Shared State Data Layer</text>
+  <rect x="425" y="475" width="200" height="58" class="box state"/><text x="452" y="500" class="t">Vulnerability DB</text><text x="446" y="520" class="small">SQLite + reports</text>
+  <rect x="670" y="475" width="200" height="58" class="box state"/><text x="709" y="500" class="t">Coverage Map</text><text x="720" y="520" class="small">SQLite</text>
+  <rect x="915" y="475" width="160" height="58" class="box state"/><text x="938" y="500" class="t">Token Budget</text><text x="955" y="520" class="small">Ledger</text>
+
+  <rect x="1160" y="410" width="370" height="155" class="box tool"/>
+  <text x="1190" y="443" class="h">Deterministic Tooling</text>
+  <rect x="1195" y="480" width="140" height="52" class="box tool"/><text x="1225" y="512" class="t">Fuzzers</text>
+  <rect x="1360" y="480" width="145" height="52" class="box tool"/><text x="1375" y="512" class="t">Regression</text>
+
+  <rect x="220" y="610" width="980" height="330" class="box agent"/>
+  <text x="250" y="643" class="h">Multi-Agent Core</text>
+  <rect x="255" y="690" width="245" height="58" class="box agent"/><text x="278" y="715" class="t">Documentation Agent</text><text x="292" y="735" class="small">OpenRouter or direct</text>
+  <rect x="545" y="680" width="265" height="68" class="box agent"/><text x="596" y="706" class="t">Judge Agent</text><text x="575" y="728" class="small">Anthropic direct, PHI-aware path</text>
+  <rect x="845" y="690" width="225" height="58" class="box agent"/><text x="885" y="715" class="t">Orchestrator Agent</text><text x="900" y="735" class="small">Campaign brief</text>
+  <rect x="860" y="825" width="250" height="64" class="box agent"/><text x="910" y="850" class="t">Red Team Agent</text><text x="895" y="872" class="small">OpenRouter, synthetic payloads</text>
+
+  <rect x="1220" y="610" width="300" height="145" class="box target"/>
+  <text x="1250" y="643" class="h">Target System</text>
+  <rect x="1260" y="680" width="220" height="50" class="box target"/><text x="1280" y="711" class="t">Clinical Co-Pilot /chat</text>
+
+  <rect x="35" y="615" width="170" height="220" class="box obs"/>
+  <text x="60" y="648" class="h">Observability</text>
+  <rect x="60" y="690" width="120" height="45" class="box obs"/><text x="82" y="718" class="t">Traces</text>
+  <rect x="60" y="760" width="120" height="45" class="box obs"/><text x="78" y="788" class="t">Dashboard</text>
+
+  <rect x="35" y="260" width="380" height="150" class="box human"/>
+  <text x="65" y="293" class="h">Human Trust Boundary</text>
+  <path d="M225 320 L385 355 L225 390 L65 355 Z" fill="#f8fafc" stroke="#64748b" stroke-width="2"/>
+  <text x="160" y="352" class="t">Critical approval</text><text x="176" y="372" class="small">approve / reject</text>
+
+  <rect x="35" y="860" width="520" height="135" class="box eval"/>
+  <text x="65" y="893" class="h">Evaluation Layer</text>
+  <rect x="65" y="922" width="160" height="45" class="box eval"/><text x="94" y="950" class="t">50 golden cases</text>
+  <rect x="245" y="922" width="150" height="45" class="box eval"/><text x="277" y="950" class="t">Progress API</text>
+  <rect x="415" y="922" width="110" height="45" class="box eval"/><text x="448" y="950" class="t">Results</text>
+
+  <path d="M920 368 L770 475" class="arrow"/>
+  <path d="M920 368 L970 475" class="arrow"/>
+  <path d="M920 368 C980 365 1240 365 1430 480" class="arrow"/>
+  <path d="M770 533 L770 680" class="arrow"/>
+  <path d="M995 533 L960 690" class="arrow"/>
+  <path d="M960 748 L985 825" class="arrow"/>
+  <path d="M1110 857 L1260 705" class="arrow"/>
+  <path d="M1260 705 L810 705" class="arrow"/>
+  <path d="M545 715 L500 715" class="arrow"/>
+  <path d="M430 690 C340 555 350 480 425 505" class="arrow"/>
+  <path d="M425 505 C300 545 285 605 300 690" class="arrow"/>
+  <path d="M300 690 C240 610 225 445 225 390" class="arrow"/>
+  <path d="M225 390 L425 505" class="arrow"/>
+  <path d="M1100 712 C1150 640 1245 520 1360 506" class="arrow"/>
+  <path d="M1425 532 L1425 680" class="arrow"/>
+  <path d="M500 720 C390 760 250 780 180 712" class="arrow dash"/>
+  <path d="M810 710 C560 770 310 790 180 712" class="arrow dash"/>
+  <path d="M1070 720 C870 815 520 890 395 944" class="arrow dash"/>
+  <path d="M1070 532 L245 944" class="arrow dash"/>
+</svg>

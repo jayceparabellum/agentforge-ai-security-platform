@@ -796,17 +796,92 @@ def fetch_report_detail(report_id: str) -> dict | None:
             (report_id,),
         ).fetchone()
     if row is None:
-        return None
+        report_path = _resolve_report_markdown_path(report_id)
+        if report_path is None:
+            return None
+        report = _report_from_markdown(report_id, report_path)
+    else:
+        report = dict(row)
+        report_path = _resolve_report_markdown_path(report_id, report.get("markdown_path"))
+        if report_path is None:
+            report_path = _resolve_report_markdown_path(report_id)
 
-    report = dict(row)
-    markdown_path = Path(report["markdown_path"])
-    if not markdown_path.is_absolute():
-        markdown_path = Path.cwd() / markdown_path
+    if report_path is None:
+        report["markdown_content"] = "Report markdown file is not available on this deployment."
+        return report
+    report["markdown_path"] = str(report_path)
     try:
-        report["markdown_content"] = markdown_path.read_text(encoding="utf-8")
+        report["markdown_content"] = report_path.read_text(encoding="utf-8")
     except OSError:
         report["markdown_content"] = "Report markdown file is not available on this deployment."
     return report
+
+
+def _resolve_report_markdown_path(report_id: str, markdown_path: str | None = None) -> Path | None:
+    candidates = []
+    if markdown_path:
+        path = Path(markdown_path)
+        candidates.append(path if path.is_absolute() else Path.cwd() / path)
+    candidates.extend(
+        [
+            Path.cwd() / "reports" / f"{report_id}.md",
+            Path(__file__).resolve().parents[1] / "reports" / f"{report_id}.md",
+        ]
+    )
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return None
+
+
+def _report_from_markdown(report_id: str, report_path: Path) -> dict:
+    title = report_id
+    severity = 3
+    status = "open"
+    case_id = report_id.removeprefix("AF-")
+    campaign_id = "artifact-fallback"
+    try:
+        lines = report_path.read_text(encoding="utf-8").splitlines()
+    except OSError:
+        lines = []
+    for line in lines[:30]:
+        stripped = line.strip()
+        if stripped.startswith("#"):
+            title = stripped.lstrip("#").strip() or title
+        lower = stripped.lower()
+        if lower.startswith("- severity:") or lower.startswith("severity:"):
+            value = stripped.split(":", 1)[1].strip()
+            if value[:1].isdigit():
+                severity = int(value[:1])
+        if lower.startswith("- case id:") or lower.startswith("case id:"):
+            case_id = stripped.split(":", 1)[1].strip() or case_id
+        if lower.startswith("- campaign id:") or lower.startswith("campaign id:"):
+            campaign_id = stripped.split(":", 1)[1].strip() or campaign_id
+    return {
+        "id": report_id,
+        "case_id": case_id,
+        "campaign_id": campaign_id,
+        "title": title,
+        "severity": severity,
+        "status": status,
+        "markdown_path": str(report_path),
+        "created_at": "",
+        "category": None,
+        "payload_sequence": "[]",
+        "target_status_code": None,
+        "target_response_excerpt": "",
+        "transport_error": None,
+        "observed_behavior": "Report was loaded from the checked-in report artifact because the runtime database did not contain this report row.",
+        "verdict": "artifact",
+        "confidence": None,
+        "rationale": "Artifact fallback report loaded from reports directory.",
+        "should_regress": None,
+        "human_review_required": severity >= 5,
+        "approval_status": "pending" if severity >= 5 else None,
+        "decided_by": None,
+        "approval_notes": "",
+        "decided_at": None,
+    }
 
 
 def fetch_token_budget_ledger(campaign_id: str | None = None, limit: int = 100) -> dict:

@@ -15,6 +15,7 @@ This is a separate application, not an OpenEMR fork. It runs authorized adversar
 - Original Gauntlet GitLab URL: `https://labs.gauntletai.com/jayceparabellum/agentforge-ai-security-platform`.
 - Target system: `https://clinical-copilot-0mgb.onrender.com`.
 - Local verification: passed on the Mac mini.
+- Evaluation status: 50 golden safety cases with 100% suite readiness.
 - Smoke campaign: reached the deployed OpenEMR URL with HTTP 200 and generated six reviewable partial findings.
 - Target route: red-team payloads are sent only to the allowlisted Clinical Co-Pilot target URL with `TARGET_CHAT_PATH=/chat`.
 
@@ -35,6 +36,8 @@ This is a separate application, not an OpenEMR fork. It runs authorized adversar
 - Provides Layer 7 critical-severity human approval gates.
 - Stores agent traces, attack results, verdicts, and report metadata in SQLite.
 - Provides a FastAPI dashboard and JSON API for reviewing findings.
+- Provides a 50-case golden eval suite with category coverage, quality gates, and `/api/evals/progress`.
+- Provides resilient report artifact fallback so checked-in markdown reports remain viewable even when Render recreates runtime SQLite state.
 - Ships with a Dockerfile and Render Blueprint config.
 - Runs scheduled campaigns weekly by default to control cost.
 
@@ -72,6 +75,12 @@ Run tests:
 
 ```bash
 pytest
+```
+
+Run golden eval readiness:
+
+```bash
+python -m agentforge.run_evals
 ```
 
 Run a smoke campaign:
@@ -176,6 +185,8 @@ It checks the allowlisted OpenEMR base URL plus likely Clinical Co-Pilot API pat
 - `USERS.md`: users, workflows, and automation justification.
 - `COST_ANALYSIS.md`: scale-tier cost model.
 - `evals/`: seed cases and latest smoke campaign output.
+- `evals/golden_cases.json`: 50-case golden adversarial safety eval suite.
+- `/api/evals/progress`: golden eval progress, category coverage, quality gates, and readiness percentage.
 - `reports/`: vulnerability report queue.
 - `schemas/`: typed inter-agent message contracts.
 - `agentforge/data/threat_feeds/`: latest external threat feed snapshots.

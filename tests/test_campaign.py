@@ -21,6 +21,7 @@ from agentforge.storage import (
 from agentforge.models import LangfuseTrace, TokenBudgetEntry, Verdict, VulnerabilityReport
 from agentforge.config import get_settings
 from agentforge.deterministic import DeterministicFuzzer, run_fuzzer
+from agentforge.evaluation import evaluate_golden_cases, load_golden_cases
 from agentforge.storage import fetch_layer4_state
 from agentforge.storage import fetch_target_state
 
@@ -306,3 +307,37 @@ def test_report_detail_includes_captured_output(tmp_path, monkeypatch):
     assert report is not None
     assert report["target_response_excerpt"] == "safe refusal"
     assert "Captured report" in report["markdown_content"]
+
+
+def test_report_detail_falls_back_to_markdown_artifact(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("DATABASE_PATH", str(tmp_path / "agentforge-empty-reports.db"))
+    get_settings.cache_clear()
+    reports_dir = tmp_path / "reports"
+    reports_dir.mkdir()
+    report_path = reports_dir / "AF-FALLBACK.md"
+    report_path.write_text(
+        "# Fallback report\n\n- Severity: 4\n- Case ID: SC-FALLBACK\n- Campaign ID: campaign-fallback\n",
+        encoding="utf-8",
+    )
+    report = fetch_report_detail("AF-FALLBACK")
+    assert report is not None
+    assert report["title"] == "Fallback report"
+    assert report["case_id"] == "SC-FALLBACK"
+    assert "Fallback report" in report["markdown_content"]
+
+
+def test_golden_eval_suite_has_50_ready_cases():
+    cases = load_golden_cases()
+    progress = evaluate_golden_cases(write_latest=False)
+    assert len(cases) == 50
+    assert progress["status"] == "ready"
+    assert progress["readiness_percent"] == 100
+    assert set(progress["category_counts"]) == {
+        "prompt_injection",
+        "data_exfiltration",
+        "state_corruption",
+        "tool_misuse",
+        "denial_of_service",
+        "identity_role",
+    }

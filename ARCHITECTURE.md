@@ -37,6 +37,7 @@ The deployed Clinical Co-Pilot application is reachable, and the current default
 | Layer 5 behavior | Maintains the allowlisted OpenEMR target profile, probes likely endpoint paths, and records whether the deployed target integration is healthy, partial, or unreachable |
 | Layer 6 behavior | Records Langfuse-style traces and exposes coverage, verdict, and transition summaries |
 | Layer 7 behavior | Opens explicit human approval gates for critical-severity findings |
+| Eval behavior | Ships a 50-case golden adversarial safety suite with category coverage, quality gates, and `/api/evals/progress` |
 | Target route | `TARGET_CHAT_PATH=/chat` for the deployed Clinical Co-Pilot service |
 
 ## System Diagram
@@ -71,7 +72,8 @@ The deployed Clinical Co-Pilot application is reachable, and the current default
 | Target system layer | `agentforge/target.py` with allowlist enforcement, health checks, endpoint probing, and target profile persistence |
 | Observability layer | SQLite-backed `langfuse_traces` table and `/api/observability` |
 | Human trust boundary | SQLite-backed `human_approvals` table and `/api/approvals` approval queue |
-| Seed evals | `agentforge/data/seed_cases.json` and `evals/seed_cases.json` |
+| Seed evals | `agentforge/data/seed_cases.json`, `evals/seed_cases.json`, and `evals/golden_cases.json` |
+| Golden eval progress | `agentforge/evaluation.py`, `python -m agentforge.run_evals`, `evals/results.latest.json`, and `/api/evals/progress` |
 | Threat feeds | `agentforge/data/threat_feeds/*.json` snapshots |
 | Generated threat cases | `agentforge/data/generated_threat_cases.json` |
 | Rubrics | `agentforge/data/rubrics.json` |
@@ -167,7 +169,7 @@ Layer 1 is now implemented as an operational feed refresh pipeline rather than o
 python -m agentforge.run_threat_intel
 ```
 
-It performs four feed operations:
+It performs eight feed operations:
 
 - Downloads and hashes the official OWASP LLM Top 10 2025 PDF, then maps the ten LLM risk categories into AgentForge attack categories.
 - Reads the MITRE ATLAS `atlas-data` repository through the GitHub API and snapshots selected technique/case-study records.
@@ -199,6 +201,20 @@ schedule: "0 5 1,15 * *"
 ```
 
 That approximates the 14-day cadence in the original architecture while staying simple enough for Render cron.
+
+## Evaluation Layer
+
+AgentForge now includes a dedicated golden eval suite at `evals/golden_cases.json`. The suite contains 50 adversarial safety cases across prompt injection, data exfiltration, state corruption, tool misuse, denial of service, and identity/role escalation. Each case includes an adversarial objective, prompt, expected safe behavior, pass criteria, risk tags, severity, and source attribution.
+
+The eval runner is deterministic and does not spend model tokens:
+
+```bash
+python -m agentforge.run_evals
+```
+
+The runner validates suite integrity and writes `evals/results.latest.json`. The dashboard exposes the same readiness data through `/api/evals/progress`, including total cases, category distribution, severity distribution, source distribution, and quality gates for 50-case completeness, unique IDs, category coverage, PHI guard coverage, tool guard coverage, high-risk coverage, and multi-source coverage.
+
+This makes the eval layer useful for the MVP demo because it proves the system has a durable safety benchmark rather than only one-off campaign outputs.
 
 ## Regression Harness
 
