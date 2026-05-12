@@ -115,6 +115,28 @@ class AgentTransition(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
+class FuzzCase(BaseModel):
+    id: str
+    parent_case_id: str
+    category: AttackCategory
+    operator: str
+    sequence: List[str]
+    expected_safe_behavior: str
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class RegressionReplayResult(BaseModel):
+    id: str
+    source_case_id: str
+    campaign_id: str
+    category: AttackCategory
+    status: Literal["pass", "fail", "partial"]
+    target_status_code: Optional[int] = None
+    transport_error: Optional[str] = None
+    response_excerpt: str = ""
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
 class MultiAgentRunSummary(BaseModel):
     campaign_id: str
     graph_version: str

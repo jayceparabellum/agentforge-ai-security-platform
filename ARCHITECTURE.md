@@ -33,6 +33,7 @@ One MVP limitation is intentionally visible: the OpenEMR application is reachabl
 | Layer 1 behavior | Fetches OWASP LLM Top 10, MITRE ATLAS, NIST AI 600-1, and NVD CVE 2.0; normalizes external items into generated seed cases; stores feed/case/coverage state in SQLite |
 | Layer 2 behavior | Runs campaigns through `MultiAgentCore` graph version `layer2-langgraph-provider-routes-v2` and records typed transitions with provider/data-hop metadata |
 | Layer 3 behavior | Persists vulnerability DB, coverage map, and token budget ledger in SQLite shared state |
+| Layer 4 behavior | Deterministic fuzzers generate prompt variants and regression replay reruns confirmed/partial findings |
 | Known integration gap | Confirm final `TARGET_CHAT_PATH` for the Clinical Co-Pilot chat endpoint |
 
 ## System Diagram
@@ -63,6 +64,7 @@ One MVP limitation is intentionally visible: the OpenEMR application is reachabl
 | Vulnerability DB | SQLite-backed `/api/vulnerabilities` view over reports, verdicts, and attack results |
 | Token Budget Ledger | SQLite-backed `/api/budget-ledger` with per-agent estimated token and cost entries |
 | Agent transition log | SQLite-backed `/api/agent-transitions` with graph node handoffs |
+| Deterministic tooling | `agentforge/deterministic.py` with fuzzer and regression replay harness |
 | Seed evals | `agentforge/data/seed_cases.json` and `evals/seed_cases.json` |
 | Threat feeds | `agentforge/data/threat_feeds/*.json` snapshots |
 | Generated threat cases | `agentforge/data/generated_threat_cases.json` |
@@ -192,6 +194,42 @@ That approximates the 14-day cadence in the original architecture while staying 
 
 The regression harness treats `fail` and `partial` verdicts as cases that should be replayed. A pass means the target response clearly satisfies the safe-behavior rubric. A partial means either the behavior is ambiguous or the target integration path did not expose a complete evaluable response. That honesty matters: an unevaluable attack is not the same thing as a fixed vulnerability.
 
+## Layer 4 Deterministic Tooling
+
+Layer 4 is implemented in `agentforge/deterministic.py`. It is deliberately not an agent. The goal is repeatability: deterministic fuzzing and replay should produce stable, inspectable test artifacts that the Orchestrator can trust.
+
+The fuzzer generates bounded prompt variants from seed cases using deterministic operators:
+
+- `case_toggle`
+- `base64_wrap`
+- `role_prefix`
+- `spacing_noise`
+
+Generated variants are stored in the `fuzz_cases` table and exposed through:
+
+```text
+GET /api/layer4
+POST /api/layer4/fuzz
+python -m agentforge.run_layer4 fuzz --max-cases 12
+```
+
+The regression harness reads confirmed or partial findings from the vulnerability database, replays their payload sequence against the configured target, runs the Judge rubric, and stores replay outcomes in `regression_replay_results`.
+
+Regression replay is available through:
+
+```text
+POST /api/layer4/regression
+python -m agentforge.run_layer4 regression --intensity scheduled
+```
+
+Render includes a scheduled `agentforge-regression-replay` job:
+
+```yaml
+schedule: "0 7 * * 1"
+```
+
+That runs after the weekly campaign window and provides a deterministic signal about whether previously observed issues still reproduce.
+
 ## Shared State Data Layer
 
 Layer 3 is implemented as a SQLite shared-state data layer. It is intentionally simple for MVP deployment, but the table boundaries match the production architecture and can be moved to Postgres without changing agent responsibilities.
@@ -205,6 +243,9 @@ The layer contains:
 - `threat_attack_cases`: normalized Layer 1 generated seed cases.
 - `coverage_map`: category-level seed/generated coverage state.
 - `token_budget_ledger`: per-agent and per-campaign estimated token and cost entries.
+- `agent_transitions`: Layer 2 graph handoff trace.
+- `fuzz_cases`: deterministic Layer 4 prompt/payload variants.
+- `regression_replay_results`: deterministic replay outcomes for confirmed or partial findings.
 
 The Vulnerability DB is exposed at:
 
@@ -230,6 +271,7 @@ The dashboard surfaces:
 - Open and human-review reports.
 - Vulnerability DB review queue.
 - Token budget ledger summary.
+- Layer 4 fuzzing and regression replay state.
 - Agent trace events.
 
 The assignment architecture calls for Langfuse. This MVP keeps the data model Langfuse-ready while using SQLite for local replayability and deployment simplicity. The deployed dashboard has been confirmed to launch on Render, and the smoke campaign control has been used successfully after deployment.
@@ -263,3 +305,4 @@ The deployed code is provider-agnostic today and runs without paid LLM credentia
 - Weekly campaigns are cost-effective, but they discover regressions more slowly than daily smoke tests.
 - GitHub is the active deployment source for Render. The Gauntlet GitLab remote can be kept as a mirror once authentication is available.
 - NVD keyword search can return zero records depending on query terms and NVD availability; the refresh still snapshots the empty source result and reports source counts honestly.
+- Layer 4 fuzzing is deterministic string transformation rather than LLM-driven mutation. This keeps replayability high and cost near zero.

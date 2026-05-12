@@ -6,9 +6,11 @@ from fastapi.responses import HTMLResponse
 from agentforge.agents.threat_intel import ThreatIntelAgent
 from agentforge.campaign import run_campaign
 from agentforge.config import get_settings
+from agentforge.deterministic import run_fuzzer, run_regression_replay
 from agentforge.storage import (
     fetch_agent_transitions,
     fetch_dashboard,
+    fetch_layer4_state,
     fetch_threat_intel_state,
     fetch_token_budget_ledger,
     fetch_vulnerability_db,
@@ -72,6 +74,21 @@ def provider_routes() -> dict:
     return get_settings().provider_routes
 
 
+@app.get("/api/layer4")
+def layer4_state() -> dict:
+    return fetch_layer4_state()
+
+
+@app.post("/api/layer4/fuzz")
+def layer4_fuzz(max_cases: int = 12) -> dict:
+    return run_fuzzer(max_cases=max_cases)
+
+
+@app.post("/api/layer4/regression")
+async def layer4_regression(intensity: str = "smoke") -> dict:
+    return await run_regression_replay(intensity=intensity)
+
+
 @app.get("/", response_class=HTMLResponse)
 def index() -> str:
     data = fetch_dashboard()
@@ -107,6 +124,14 @@ def index() -> str:
         f"<tr><td>{agent}</td><td>{route['provider']}</td><td>{route['model']}</td><td>{route['data_path']}</td></tr>"
         for agent, route in get_settings().provider_routes.items()
     )
+    fuzz_rows = "".join(
+        f"<tr><td>{row['category'].replace('_', ' ')}</td><td>{row['count']}</td></tr>"
+        for row in data["fuzz_summary"]
+    ) or "<tr><td colspan='2'>No fuzz cases generated yet.</td></tr>"
+    replay_rows = "".join(
+        f"<tr><td>{row['status']}</td><td>{row['count']}</td></tr>"
+        for row in data["regression_summary"]
+    ) or "<tr><td colspan='2'>No regression replay results yet.</td></tr>"
     return f"""
 <!doctype html>
 <html lang="en">
@@ -143,6 +168,8 @@ def index() -> str:
       <p>Target: <code>{get_settings().target_base_url}</code> | Cadence: <code>{get_settings().agentforge_campaign_cadence}</code> | Budget: <code>${get_settings().campaign_budget_usd}</code></p>
       <button onclick="fetch('/api/campaigns/run?intensity=smoke', {{method:'POST'}}).then(() => location.reload())">Run Smoke Campaign</button>
       <button onclick="fetch('/api/threat-intel/refresh', {{method:'POST'}}).then(() => location.reload())">Refresh Threat Intel</button>
+      <button onclick="fetch('/api/layer4/fuzz', {{method:'POST'}}).then(() => location.reload())">Run Fuzzer</button>
+      <button onclick="fetch('/api/layer4/regression', {{method:'POST'}}).then(() => location.reload())">Replay Regressions</button>
     </section>
     <section>
       <h2>Coverage</h2>
@@ -173,6 +200,13 @@ def index() -> str:
       <table><thead><tr><th>Node</th><th>Status</th><th>Transitions</th></tr></thead><tbody>{transition_rows}</tbody></table>
       <h3>Provider Routes</h3>
       <table><thead><tr><th>Path</th><th>Provider</th><th>Model</th><th>Data Path</th></tr></thead><tbody>{provider_rows}</tbody></table>
+    </section>
+    <section>
+      <h2>Layer 4 Deterministic Tooling</h2>
+      <h3>Fuzzer Coverage</h3>
+      <table><thead><tr><th>Category</th><th>Generated Cases</th></tr></thead><tbody>{fuzz_rows}</tbody></table>
+      <h3>Regression Replay</h3>
+      <table><thead><tr><th>Status</th><th>Count</th></tr></thead><tbody>{replay_rows}</tbody></table>
     </section>
     <section>
       <h2>Agent Trace</h2>

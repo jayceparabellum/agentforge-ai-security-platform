@@ -36,3 +36,5 @@ The Token Budget Ledger persists the operational cost model instead of leaving c
 Layer 2 now records which agent produced each budget entry. This allows campaign spend to be separated by Red Team mutation, target execution, Judge evaluation, Documentation, and Orchestrator control work.
 
 Provider routing also affects cost strategy. Red Team generation is routed through OpenRouter because model swapping and price competition matter most on synthetic payload generation. Judge evaluation stays direct to Anthropic because correctness and a simpler data-hop story matter more than marginal routing flexibility when target responses may contain sensitive data.
+
+Layer 4 keeps deterministic tooling cheap. Fuzzing is pure string transformation and has no model cost. Regression replay only incurs target/Judge costs when replayed cases are evaluated; this is why it is scheduled weekly after the campaign rather than continuously.

@@ -29,6 +29,7 @@ This is a separate application, not an OpenEMR fork. It runs authorized adversar
 - Maintains a Token Budget Ledger with per-campaign and per-agent estimated spend.
 - Runs campaigns through an explicit Layer 2 multi-agent core with typed transition logging.
 - Records Layer 2 provider routes: Red Team through OpenRouter, Judge through direct Anthropic, Documentation configurable, and local fallback through Ollama.
+- Provides Layer 4 deterministic tooling: fuzzers and regression replay.
 - Stores agent traces, attack results, verdicts, and report metadata in SQLite.
 - Provides a FastAPI dashboard and JSON API for reviewing findings.
 - Ships with a Dockerfile and Render Blueprint config.
@@ -82,6 +83,13 @@ Refresh Layer 1 threat intelligence:
 python -m agentforge.run_threat_intel
 ```
 
+Run Layer 4 deterministic tooling:
+
+```bash
+python -m agentforge.run_layer4 fuzz --max-cases 12
+python -m agentforge.run_layer4 regression --intensity smoke
+```
+
 ## Render Deployment
 
 Render deploys this repo through `render.yaml`.
@@ -97,6 +105,7 @@ Deployed Blueprint services:
 - `agentforge-ai-security-platform`: web dashboard/API.
 - `agentforge-weekly-campaign`: weekly scheduled campaign runner.
 - `agentforge-threat-intel-refresh`: scheduled threat-intelligence refresh.
+- `agentforge-regression-replay`: scheduled deterministic regression replay.
 
 Default environment:
 
@@ -158,6 +167,7 @@ schedule: "0 5 1,15 * *"
 - `/api/budget-ledger`: per-agent token and cost ledger.
 - `/api/agent-transitions`: Layer 2 graph transition log.
 - `/api/provider-routes`: Layer 2 provider/data-hop routing plan.
+- `/api/layer4`: deterministic fuzzing and regression replay state.
 
 ## Target Integration Note
 

@@ -11,6 +11,8 @@ from agentforge.models import (
     AgentTransition,
     AttackCase,
     AttackResult,
+    FuzzCase,
+    RegressionReplayResult,
     ThreatFeedItem,
     TokenBudgetEntry,
     Verdict,
@@ -108,6 +110,26 @@ CREATE TABLE IF NOT EXISTS agent_transitions (
   status TEXT NOT NULL,
   message_type TEXT NOT NULL,
   payload_summary TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS fuzz_cases (
+  id TEXT PRIMARY KEY,
+  parent_case_id TEXT NOT NULL,
+  category TEXT NOT NULL,
+  operator TEXT NOT NULL,
+  sequence TEXT NOT NULL,
+  expected_safe_behavior TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS regression_replay_results (
+  id TEXT PRIMARY KEY,
+  source_case_id TEXT NOT NULL,
+  campaign_id TEXT NOT NULL,
+  category TEXT NOT NULL,
+  status TEXT NOT NULL,
+  target_status_code INTEGER,
+  transport_error TEXT,
+  response_excerpt TEXT NOT NULL,
   created_at TEXT NOT NULL
 );
 """
@@ -267,6 +289,71 @@ def fetch_agent_transitions(campaign_id: str | None = None, limit: int = 100) ->
     return {
         "transitions": [dict(row) for row in rows],
         "node_counts": [dict(row) for row in node_rows],
+    }
+
+
+def save_fuzz_cases(cases: List[FuzzCase]) -> None:
+    with connect() as conn:
+        for case in cases:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO fuzz_cases
+                (id, parent_case_id, category, operator, sequence, expected_safe_behavior, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    case.id,
+                    case.parent_case_id,
+                    case.category.value,
+                    case.operator,
+                    json.dumps(case.sequence),
+                    case.expected_safe_behavior,
+                    case.created_at.isoformat(),
+                ),
+            )
+
+
+def save_regression_result(result: RegressionReplayResult) -> None:
+    with connect() as conn:
+        conn.execute(
+            """
+            INSERT OR REPLACE INTO regression_replay_results
+            (id, source_case_id, campaign_id, category, status, target_status_code,
+             transport_error, response_excerpt, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                result.id,
+                result.source_case_id,
+                result.campaign_id,
+                result.category.value,
+                result.status,
+                result.target_status_code,
+                result.transport_error,
+                result.response_excerpt,
+                result.created_at.isoformat(),
+            ),
+        )
+
+
+def fetch_layer4_state(limit: int = 100) -> dict:
+    with connect() as conn:
+        fuzz_rows = conn.execute("SELECT * FROM fuzz_cases ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()
+        fuzz_summary = conn.execute(
+            "SELECT category, operator, COUNT(*) AS count FROM fuzz_cases GROUP BY category, operator ORDER BY category, operator"
+        ).fetchall()
+        replay_rows = conn.execute(
+            "SELECT * FROM regression_replay_results ORDER BY created_at DESC LIMIT ?",
+            (limit,),
+        ).fetchall()
+        replay_summary = conn.execute(
+            "SELECT status, COUNT(*) AS count FROM regression_replay_results GROUP BY status ORDER BY status"
+        ).fetchall()
+    return {
+        "fuzz_cases": [dict(row) for row in fuzz_rows],
+        "fuzz_summary": [dict(row) for row in fuzz_summary],
+        "regression_results": [dict(row) for row in replay_rows],
+        "regression_summary": [dict(row) for row in replay_summary],
     }
 
 
@@ -500,6 +587,12 @@ def fetch_dashboard() -> dict:
             ORDER BY to_node, status
             """
         ).fetchall()
+        fuzz_summary = conn.execute(
+            "SELECT category, COUNT(*) AS count FROM fuzz_cases GROUP BY category ORDER BY category"
+        ).fetchall()
+        replay_summary = conn.execute(
+            "SELECT status, COUNT(*) AS count FROM regression_replay_results GROUP BY status ORDER BY status"
+        ).fetchall()
         cost = conn.execute("SELECT COALESCE(SUM(cost_estimate_usd), 0) AS cost FROM attack_results").fetchone()["cost"]
         last = conn.execute("SELECT campaign_id FROM events ORDER BY id DESC LIMIT 1").fetchone()
     verdict_counts = {row["verdict"]: row["count"] for row in verdict_rows}
@@ -526,6 +619,8 @@ def fetch_dashboard() -> dict:
             for row in budget_rows
         ],
         "agent_transitions": [dict(row) for row in transition_rows],
+        "fuzz_summary": [dict(row) for row in fuzz_summary],
+        "regression_summary": [dict(row) for row in replay_summary],
     }
 
 

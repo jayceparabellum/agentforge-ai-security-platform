@@ -53,3 +53,17 @@ services:
         value: "12"
       - key: NVD_KEYWORD_QUERY
         value: LLM AI machine learning
+
+  - type: cron
+    name: agentforge-regression-replay
+    env: docker
+    plan: starter
+    schedule: "0 7 * * 1"
+    dockerCommand: python -m agentforge.run_layer4 regression --intensity scheduled
+    envVars:
+      - key: TARGET_BASE_URL
+        value: https://openemr-js46.onrender.com
+      - key: TARGET_ALLOWLIST
+        value: https://openemr-js46.onrender.com
+      - key: CAMPAIGN_BUDGET_USD
+        value: "2.50"

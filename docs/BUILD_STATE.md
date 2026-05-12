@@ -109,3 +109,33 @@ rollback-mvp-layer123-provider-routes-2026-05-12
 `
 
 See docs/ROLLBACK.md for restore commands.
+
+## Layer 4: Deterministic Tooling
+
+Status: implemented for MVP.
+
+Current behavior:
+
+- Deterministic fuzzer generates prompt/payload variants using case toggling, base64 wrapping, role-prefix wrapping, and spacing noise.
+- Fuzz cases are persisted in uzz_cases.
+- Regression replay reads confirmed/partial findings and replays their payloads against the configured target.
+- Replay results are persisted in egression_replay_results.
+- Dashboard and API expose Layer 4 state.
+- Render config includes gentforge-regression-replay as a weekly deterministic replay job.
+
+APIs:
+
+- GET /api/layer4
+- POST /api/layer4/fuzz
+- POST /api/layer4/regression
+
+CLI:
+
+`ash
+python -m agentforge.run_layer4 fuzz --max-cases 12
+python -m agentforge.run_layer4 regression --intensity smoke
+`
+
+MVP substitution:
+
+- Fuzzing is deterministic string transformation rather than LLM-driven mutation. This keeps replayability high and cost near zero.
