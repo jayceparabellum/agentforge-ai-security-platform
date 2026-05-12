@@ -6,7 +6,9 @@ The deployed OpenEMR Clinical Co-Pilot creates a high-value adversarial surface 
 
 AgentForge prioritizes coverage based on clinical impact, exploitability, and regression risk. Data exfiltration receives the highest priority because a successful attack can expose PHI, cross-patient records, or operational identifiers. Identity and role exploitation is also high priority because an LLM assistant may be persuaded to treat conversation text as an authority signal unless server-side permissions are enforced. State corruption is a key multi-turn risk: an attacker can gradually establish false assumptions, then request sensitive behavior later in the conversation. Tool misuse matters because a safe natural-language response can still be paired with unsafe backend tool calls if parameters are not validated. Denial of service is lower clinical-severity than PHI exposure, but it matters operationally because recursive tool calls, oversized outputs, and repeated retrieval can increase cost and latency.
 
-The platform does not assume that one successful jailbreak proves the system is insecure or that one blocked prompt proves a category is fixed. Each seed case is treated as the beginning of a coverage thread. The Threat Intelligence Agent now refreshes OWASP LLM Top 10, MITRE ATLAS, NIST AI 600-1, and NVD CVE 2.0 sources, snapshots feed results, and normalizes external items into generated seed cases. The Red Team Agent mutates seed prompts into variants, the Judge Agent evaluates responses against a stable rubric, and uncertain or failed cases are converted into reports and regression candidates. This gives the project a living threat model rather than a static document.
+The platform does not assume that one successful jailbreak proves the system is insecure or that one blocked prompt proves a category is fixed. Each seed case is treated as the beginning of a coverage thread. The Threat Intelligence Agent now refreshes OWASP LLM Top 10, MITRE ATLAS, NIST AI 600-1, and NVD CVE 2.0 sources, snapshots feed results, normalizes external items into generated seed cases, and stores them in the shared-state data layer for the Orchestrator and dashboard. The Red Team Agent mutates seed prompts into variants, the Judge Agent evaluates responses against a stable rubric, and uncertain or failed cases are converted into reports and regression candidates. This gives the project a living threat model rather than a static document.
+
+The Layer 2 multi-agent core now records each handoff as an auditable transition, which matters for healthcare security review. A finding can be traced from threat-intel seed, to orchestrator selection, to Red Team mutation, to target response, to Judge verdict, to Documentation Agent report.
 
 Trust boundaries are explicit. The deployed OpenEMR target is allowlisted. The adversarial platform must not be repointed at unauthorized systems. Attack generation is synthetic and bounded by budget. The Judge is isolated from the Red Team so it is not influenced by the attacker’s explanation of why an exploit should count. Critical-severity findings and low-confidence verdicts are routed to a human review queue. Reports are written for reproducibility, not drama: each one must include a minimal attack sequence, expected behavior, observed behavior, severity, and remediation guidance.
 
@@ -31,6 +33,7 @@ For the MVP, the key implementation risk is target integration. The OpenEMR appl
 - Tool calls must be authorized outside the LLM.
 - Target URL must remain allowlisted.
 - Critical reports require human approval.
+- Vulnerability and budget state are persisted in shared state so review decisions are auditable.
 
 ## Initial Regression Categories
 

@@ -9,7 +9,7 @@ import httpx
 
 from agentforge.config import Settings, get_settings
 from agentforge.models import AgentEvent, AttackCase, AttackCategory, ThreatFeedItem, ThreatIntelRefreshResult
-from agentforge.storage import record_event
+from agentforge.storage import fetch_generated_threat_cases, record_event, save_threat_intel_state
 
 
 class ThreatIntelAgent:
@@ -27,6 +27,9 @@ class ThreatIntelAgent:
         data = json.loads(base_path.read_text(encoding="utf-8"))
         if generated_path.exists():
             data.extend(json.loads(generated_path.read_text(encoding="utf-8")))
+        shared_cases = fetch_generated_threat_cases()
+        if shared_cases:
+            data.extend([case.model_dump(mode="json") for case in shared_cases])
         cases = self._dedupe_cases([AttackCase.model_validate(item) for item in data])
         record_event(
             AgentEvent(
@@ -66,6 +69,7 @@ class ThreatIntelAgent:
         source_counts: Dict[str, int] = {}
         for item in items:
             source_counts[item.source] = source_counts.get(item.source, 0) + 1
+        save_threat_intel_state(items, cases)
 
         result = ThreatIntelRefreshResult(
             source_counts=source_counts,

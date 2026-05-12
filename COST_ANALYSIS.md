@@ -10,6 +10,7 @@ AgentForge defaults to weekly scheduled campaigns because it is the most cost-ef
 - Deterministic fallback: near-zero LLM cost.
 - Hosted model mode: Red Team and Documentation via OpenRouter, Judge via direct provider.
 - Threat intelligence refresh: mostly deterministic HTTP fetch and hash work; no LLM spend in the deployed MVP.
+- Layer 3 Token Budget Ledger records per-agent estimated token and cost entries during each campaign.
 
 ## Scale Tiers
 
@@ -29,3 +30,7 @@ At higher scale, architecture changes. The Red Team Agent should move to a cheap
 Weekly scheduled campaigns are recommended for the current project. They are frequent enough to show continuous testing and regression behavior, but conservative enough to avoid runaway token usage. Biweekly is acceptable once the platform has a stable baseline and fewer target changes.
 
 Threat intelligence refresh runs twice per month. This catches new source updates without adding meaningful token cost because the current implementation uses deterministic mapping rather than LLM normalization.
+
+The Token Budget Ledger persists the operational cost model instead of leaving cost as a one-off campaign total. The MVP estimates tokens from prompt/response word counts and applies a conservative placeholder rate. In production, those entries should be replaced or augmented with provider-returned usage data.
+
+Layer 2 now records which agent produced each budget entry. This allows campaign spend to be separated by Red Team mutation, target execution, Judge evaluation, Documentation, and Orchestrator control work.

@@ -30,7 +30,9 @@ One MVP limitation is intentionally visible: the OpenEMR application is reachabl
 | Campaign budget | `$2.50` default |
 | Local verification | `pytest` passed on Mac mini |
 | Live smoke behavior | Campaign controls ran and populated review findings |
-| Layer 1 behavior | Fetches OWASP LLM Top 10, MITRE ATLAS, NIST AI 600-1, and NVD CVE 2.0; normalizes external items into generated seed cases |
+| Layer 1 behavior | Fetches OWASP LLM Top 10, MITRE ATLAS, NIST AI 600-1, and NVD CVE 2.0; normalizes external items into generated seed cases; stores feed/case/coverage state in SQLite |
+| Layer 2 behavior | Runs campaigns through `MultiAgentCore` graph version `layer2-core-v1` and records typed transitions |
+| Layer 3 behavior | Persists vulnerability DB, coverage map, and token budget ledger in SQLite shared state |
 | Known integration gap | Confirm final `TARGET_CHAT_PATH` for the Clinical Co-Pilot chat endpoint |
 
 ## System Diagram
@@ -52,10 +54,15 @@ One MVP limitation is intentionally visible: the OpenEMR application is reachabl
 | Component | Implementation |
 | --- | --- |
 | Web/API | FastAPI in `agentforge/app.py` |
+| Multi-Agent Core | `agentforge/core.py` |
 | Campaign runner | `python -m agentforge.run_campaign` |
 | Agent code | `agentforge/agents/` |
 | Target adapter | `agentforge/target.py` with URL allowlist |
 | Shared state | SQLite tables for events, attack results, verdicts, and reports |
+| Threat-intel shared state | SQLite tables for `threat_feed_items`, `threat_attack_cases`, and `coverage_map` |
+| Vulnerability DB | SQLite-backed `/api/vulnerabilities` view over reports, verdicts, and attack results |
+| Token Budget Ledger | SQLite-backed `/api/budget-ledger` with per-agent estimated token and cost entries |
+| Agent transition log | SQLite-backed `/api/agent-transitions` with graph node handoffs |
 | Seed evals | `agentforge/data/seed_cases.json` and `evals/seed_cases.json` |
 | Threat feeds | `agentforge/data/threat_feeds/*.json` snapshots |
 | Generated threat cases | `agentforge/data/generated_threat_cases.json` |
@@ -74,8 +81,46 @@ Agents communicate through typed Pydantic objects rather than free-form text. Th
 - `Verdict`
 - `VulnerabilityReport`
 - `AgentEvent`
+- `AgentTransition`
 
 Each transition is stored in SQLite so a campaign can be reconstructed after the fact. This is the MVP equivalent of a LangGraph shared state and Langfuse trace. The design keeps the handoff format stable so LangGraph, Langfuse, Redis, and Postgres can be introduced without changing the conceptual contract.
+
+## Layer 2 Multi-Agent Core
+
+Layer 2 is implemented in `agentforge/core.py` as `MultiAgentCore`. It coordinates the agents through a typed graph rather than leaving orchestration as an implicit script. The current graph version is:
+
+```text
+layer2-core-v1
+```
+
+The graph records transitions across these nodes:
+
+- `START`
+- `Threat Intelligence Agent`
+- `Orchestrator Agent`
+- `Red Team Agent`
+- `Target System`
+- `Judge Agent`
+- `Documentation Agent`
+- `Budget Guard`
+
+Every handoff writes an `AgentTransition` row with:
+
+- campaign ID
+- source node
+- destination node
+- status: `started`, `completed`, `skipped`, `halted`, or `error`
+- message type
+- payload summary
+- timestamp
+
+The transition log is exposed at:
+
+```text
+GET /api/agent-transitions
+```
+
+The campaign response also includes a graph summary with graph version, visited nodes, transition count, and halt state. In verification, a smoke campaign recorded 48 graph transitions across the multi-agent core.
 
 ## Orchestration Strategy
 
@@ -108,7 +153,19 @@ It performs four feed operations:
 - Downloads and hashes the NIST AI 600-1 Generative AI Profile PDF, then maps core governance and measurement concerns into evaluation seeds.
 - Calls the NVD CVE 2.0 API with `NVD_KEYWORD_QUERY` and snapshots any matching CVE records.
 
-The normalization output is written to `agentforge/data/generated_threat_cases.json`. Campaigns automatically load both the local baseline seeds and these generated Layer 1 seeds. Feed failures are non-blocking: the failed source is recorded in the threat-intel refresh result, while the platform continues with the last available local/generated seed set.
+The normalization output is written to `agentforge/data/generated_threat_cases.json` and persisted into the shared-state SQLite layer. The shared state includes:
+
+- `threat_feed_items`: one row per fetched external feed item.
+- `threat_attack_cases`: normalized generated attack cases from Layer 1.
+- `coverage_map`: category-level seed/generated coverage counts for Orchestrator and dashboard use.
+
+Campaigns automatically load both the local baseline seeds and generated Layer 1 seeds from shared state, with the JSON file as an auditable snapshot fallback. Feed failures are non-blocking: the failed source is recorded in the threat-intel refresh result, while the platform continues with the last available local/generated seed set.
+
+The dashboard and API expose this state through:
+
+```text
+GET /api/threat-intel/state
+```
 
 Render now includes a scheduled `agentforge-threat-intel-refresh` cron job using this schedule:
 
@@ -122,6 +179,34 @@ That approximates the 14-day cadence in the original architecture while staying 
 
 The regression harness treats `fail` and `partial` verdicts as cases that should be replayed. A pass means the target response clearly satisfies the safe-behavior rubric. A partial means either the behavior is ambiguous or the target integration path did not expose a complete evaluable response. That honesty matters: an unevaluable attack is not the same thing as a fixed vulnerability.
 
+## Shared State Data Layer
+
+Layer 3 is implemented as a SQLite shared-state data layer. It is intentionally simple for MVP deployment, but the table boundaries match the production architecture and can be moved to Postgres without changing agent responsibilities.
+
+The layer contains:
+
+- `vulnerability_reports`: report metadata created by the Documentation Agent.
+- `attack_results`: payloads, target status, response excerpts, token estimates, and observed behavior.
+- `verdicts`: Judge Agent verdict, severity, confidence, rationale, and regression flag.
+- `threat_feed_items`: external Layer 1 feed records.
+- `threat_attack_cases`: normalized Layer 1 generated seed cases.
+- `coverage_map`: category-level seed/generated coverage state.
+- `token_budget_ledger`: per-agent and per-campaign estimated token and cost entries.
+
+The Vulnerability DB is exposed at:
+
+```text
+GET /api/vulnerabilities
+```
+
+The Token Budget Ledger is exposed at:
+
+```text
+GET /api/budget-ledger
+```
+
+During a campaign, the ledger records budget entries for seed loading, orchestration, Red Team mutation, target execution, Judge evaluation, Documentation Agent report creation, and budget halts. Each entry stores estimated tokens, estimated cost, campaign budget, and threshold state: `normal`, `warning`, or `halt`.
+
 ## Observability
 
 The dashboard surfaces:
@@ -130,6 +215,8 @@ The dashboard surfaces:
 - Pass, fail, and partial counts.
 - Estimated campaign cost.
 - Open and human-review reports.
+- Vulnerability DB review queue.
+- Token budget ledger summary.
 - Agent trace events.
 
 The assignment architecture calls for Langfuse. This MVP keeps the data model Langfuse-ready while using SQLite for local replayability and deployment simplicity. The deployed dashboard has been confirmed to launch on Render, and the smoke campaign control has been used successfully after deployment.

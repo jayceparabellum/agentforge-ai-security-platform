@@ -24,6 +24,10 @@ This is a separate application, not an OpenEMR fork. It runs authorized adversar
 - Separates responsibilities across Threat Intelligence, Orchestrator, Red Team, Judge, and Documentation agents.
 - Refreshes external threat-intelligence feeds from OWASP LLM Top 10, MITRE ATLAS, NIST AI RMF, and NVD CVE 2.0.
 - Normalizes fetched threat items into generated adversarial seed cases.
+- Stores Layer 1 threat feed items, generated cases, and coverage state in SQLite shared state.
+- Maintains a Layer 3 vulnerability database over reports, verdicts, and attack results.
+- Maintains a Token Budget Ledger with per-campaign and per-agent estimated spend.
+- Runs campaigns through an explicit Layer 2 multi-agent core with typed transition logging.
 - Stores agent traces, attack results, verdicts, and report metadata in SQLite.
 - Provides a FastAPI dashboard and JSON API for reviewing findings.
 - Ships with a Dockerfile and Render Blueprint config.
@@ -140,6 +144,10 @@ schedule: "0 5 1,15 * *"
 - `schemas/`: typed inter-agent message contracts.
 - `agentforge/data/threat_feeds/`: latest external threat feed snapshots.
 - `agentforge/data/generated_threat_cases.json`: generated Layer 1 seed cases.
+- `/api/threat-intel/state`: shared-state API for Layer 1 feed sources, generated cases, and coverage map.
+- `/api/vulnerabilities`: queryable Layer 3 vulnerability database.
+- `/api/budget-ledger`: per-agent token and cost ledger.
+- `/api/agent-transitions`: Layer 2 graph transition log.
 
 ## Target Integration Note
 

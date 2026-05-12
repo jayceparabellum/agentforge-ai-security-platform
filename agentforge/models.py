@@ -93,6 +93,37 @@ class VulnerabilityReport(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
+class TokenBudgetEntry(BaseModel):
+    campaign_id: str
+    agent: str
+    action: str
+    estimated_tokens: int = 0
+    estimated_cost_usd: float = 0.0
+    budget_usd: float
+    threshold: Literal["normal", "warning", "halt"] = "normal"
+    detail: Dict[str, Any] = Field(default_factory=dict)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class AgentTransition(BaseModel):
+    campaign_id: str
+    from_node: str
+    to_node: str
+    status: Literal["started", "completed", "skipped", "halted", "error"]
+    message_type: str
+    payload_summary: Dict[str, Any] = Field(default_factory=dict)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class MultiAgentRunSummary(BaseModel):
+    campaign_id: str
+    graph_version: str
+    nodes_visited: List[str]
+    transitions_recorded: int
+    halted: bool = False
+    halt_reason: Optional[str] = None
+
+
 class CoverageSummary(BaseModel):
     category_counts: Dict[str, int]
     pass_count: int

@@ -6,7 +6,7 @@
     "summary": "MITRE ATLAS technique or case-study data from `.github/ISSUE_TEMPLATE/CaseStudySubmission.yaml`.",
     "url": "https://raw.githubusercontent.com/mitre-atlas/atlas-data/main/.github/ISSUE_TEMPLATE/CaseStudySubmission.yaml",
     "category": "identity_role",
-    "fetched_at": "2026-05-12T05:15:50.992868Z"
+    "fetched_at": "2026-05-12T05:27:15.020870Z"
   },
   {
     "source": "MITRE ATLAS",
@@ -15,7 +15,7 @@
     "summary": "MITRE ATLAS technique or case-study data from `.github/ISSUE_TEMPLATE/Feedback.yaml`.",
     "url": "https://raw.githubusercontent.com/mitre-atlas/atlas-data/main/.github/ISSUE_TEMPLATE/Feedback.yaml",
     "category": "identity_role",
-    "fetched_at": "2026-05-12T05:15:51.320754Z"
+    "fetched_at": "2026-05-12T05:27:15.094724Z"
   },
   {
     "source": "MITRE ATLAS",
@@ -24,7 +24,7 @@
     "summary": "MITRE ATLAS technique or case-study data from `.github/ISSUE_TEMPLATE/TechniqueSubmission.yaml`.",
     "url": "https://raw.githubusercontent.com/mitre-atlas/atlas-data/main/.github/ISSUE_TEMPLATE/TechniqueSubmission.yaml",
     "category": "identity_role",
-    "fetched_at": "2026-05-12T05:15:51.441396Z"
+    "fetched_at": "2026-05-12T05:27:15.166734Z"
   },
   {
     "source": "MITRE ATLAS",
@@ -33,7 +33,7 @@
     "summary": "MITRE ATLAS technique or case-study data from `.gitlab-ci.yml`.",
     "url": "https://raw.githubusercontent.com/mitre-atlas/atlas-data/main/.gitlab-ci.yml",
     "category": "data_exfiltration",
-    "fetched_at": "2026-05-12T05:15:51.546103Z"
+    "fetched_at": "2026-05-12T05:27:15.222985Z"
   },
   {
     "source": "MITRE ATLAS",
@@ -42,7 +42,7 @@
     "summary": "MITRE ATLAS technique or case-study data from `data/case-studies/AML.CS0000.yaml`.",
     "url": "https://raw.githubusercontent.com/mitre-atlas/atlas-data/main/data/case-studies/AML.CS0000.yaml",
     "category": "data_exfiltration",
-    "fetched_at": "2026-05-12T05:15:51.677593Z"
+    "fetched_at": "2026-05-12T05:27:15.307738Z"
   },
   {
     "source": "MITRE ATLAS",
@@ -51,7 +51,7 @@
     "summary": "MITRE ATLAS technique or case-study data from `data/case-studies/AML.CS0001.yaml`.",
     "url": "https://raw.githubusercontent.com/mitre-atlas/atlas-data/main/data/case-studies/AML.CS0001.yaml",
     "category": "data_exfiltration",
-    "fetched_at": "2026-05-12T05:15:51.814913Z"
+    "fetched_at": "2026-05-12T05:27:15.385279Z"
   },
   {
     "source": "MITRE ATLAS",
@@ -60,7 +60,7 @@
     "summary": "MITRE ATLAS technique or case-study data from `data/case-studies/AML.CS0002.yaml`.",
     "url": "https://raw.githubusercontent.com/mitre-atlas/atlas-data/main/data/case-studies/AML.CS0002.yaml",
     "category": "data_exfiltration",
-    "fetched_at": "2026-05-12T05:15:51.905495Z"
+    "fetched_at": "2026-05-12T05:27:15.452304Z"
   },
   {
     "source": "MITRE ATLAS",
@@ -69,6 +69,6 @@
     "summary": "MITRE ATLAS technique or case-study data from `data/case-studies/AML.CS0003.yaml`.",
     "url": "https://raw.githubusercontent.com/mitre-atlas/atlas-data/main/data/case-studies/AML.CS0003.yaml",
     "category": "data_exfiltration",
-    "fetched_at": "2026-05-12T05:15:52.030540Z"
+    "fetched_at": "2026-05-12T05:27:15.521054Z"
   }
 ]

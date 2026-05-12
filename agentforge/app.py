@@ -6,7 +6,13 @@ from fastapi.responses import HTMLResponse
 from agentforge.agents.threat_intel import ThreatIntelAgent
 from agentforge.campaign import run_campaign
 from agentforge.config import get_settings
-from agentforge.storage import fetch_dashboard
+from agentforge.storage import (
+    fetch_agent_transitions,
+    fetch_dashboard,
+    fetch_threat_intel_state,
+    fetch_token_budget_ledger,
+    fetch_vulnerability_db,
+)
 from agentforge.target import TargetClient
 
 app = FastAPI(title="AgentForge AI Security Platform", version="0.1.0")
@@ -41,6 +47,26 @@ def refresh_threat_intel() -> dict:
     return ThreatIntelAgent().refresh().model_dump(mode="json")
 
 
+@app.get("/api/threat-intel/state")
+def threat_intel_state() -> dict:
+    return fetch_threat_intel_state()
+
+
+@app.get("/api/vulnerabilities")
+def vulnerability_db() -> dict:
+    return fetch_vulnerability_db()
+
+
+@app.get("/api/budget-ledger")
+def budget_ledger(campaign_id: str | None = None) -> dict:
+    return fetch_token_budget_ledger(campaign_id=campaign_id)
+
+
+@app.get("/api/agent-transitions")
+def agent_transitions(campaign_id: str | None = None) -> dict:
+    return fetch_agent_transitions(campaign_id=campaign_id)
+
+
 @app.get("/", response_class=HTMLResponse)
 def index() -> str:
     data = fetch_dashboard()
@@ -56,6 +82,22 @@ def index() -> str:
         f"<div class='metric'><span>{category.replace('_', ' ')}</span><strong>{count}</strong></div>"
         for category, count in data["category_counts"].items()
     ) or "<div class='metric'><span>Coverage</span><strong>0</strong></div>"
+    threat_sources = "".join(
+        f"<tr><td>{row['source']}</td><td>{row['count']}</td><td>{row['last_fetched_at']}</td></tr>"
+        for row in data["threat_sources"]
+    ) or "<tr><td colspan='3'>No threat feed data loaded yet. Refresh Layer 1 to populate shared state.</td></tr>"
+    coverage_rows = "".join(
+        f"<tr><td>{row['category'].replace('_', ' ')}</td><td>{row['seed_count']}</td><td>{row['generated_count']}</td><td>{row['last_refreshed_at']}</td></tr>"
+        for row in data["coverage_map"]
+    ) or "<tr><td colspan='4'>No coverage map data yet.</td></tr>"
+    budget_rows = "".join(
+        f"<tr><td>{row['campaign_id']}</td><td>{row['estimated_tokens']}</td><td>${row['estimated_cost_usd']}</td><td>${row['budget_usd']}</td><td>{row['threshold']}</td></tr>"
+        for row in data["budget_ledger"]
+    ) or "<tr><td colspan='5'>No token budget ledger entries yet.</td></tr>"
+    transition_rows = "".join(
+        f"<tr><td>{row['node']}</td><td>{row['status']}</td><td>{row['count']}</td></tr>"
+        for row in data["agent_transitions"]
+    ) or "<tr><td colspan='3'>No Layer 2 transitions recorded yet.</td></tr>"
     return f"""
 <!doctype html>
 <html lang="en">
@@ -104,8 +146,22 @@ def index() -> str:
       </div>
     </section>
     <section>
+      <h2>Threat Intelligence Shared State</h2>
+      <table><thead><tr><th>Source</th><th>Items</th><th>Last Fetched</th></tr></thead><tbody>{threat_sources}</tbody></table>
+      <h3>Coverage Map</h3>
+      <table><thead><tr><th>Category</th><th>Seed Cases</th><th>Generated Cases</th><th>Last Refreshed</th></tr></thead><tbody>{coverage_rows}</tbody></table>
+    </section>
+    <section>
       <h2>Review Queue</h2>
       <table><thead><tr><th>ID</th><th>Severity</th><th>Status</th><th>Title</th></tr></thead><tbody>{reports}</tbody></table>
+    </section>
+    <section>
+      <h2>Token Budget Ledger</h2>
+      <table><thead><tr><th>Campaign</th><th>Tokens</th><th>Spend</th><th>Budget</th><th>Threshold</th></tr></thead><tbody>{budget_rows}</tbody></table>
+    </section>
+    <section>
+      <h2>Layer 2 Multi-Agent Core</h2>
+      <table><thead><tr><th>Node</th><th>Status</th><th>Transitions</th></tr></thead><tbody>{transition_rows}</tbody></table>
     </section>
     <section>
       <h2>Agent Trace</h2>

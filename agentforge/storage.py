@@ -3,10 +3,19 @@ from __future__ import annotations
 import json
 import sqlite3
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, List
 
 from agentforge.config import get_settings
-from agentforge.models import AgentEvent, AttackResult, Verdict, VulnerabilityReport
+from agentforge.models import (
+    AgentEvent,
+    AgentTransition,
+    AttackCase,
+    AttackResult,
+    ThreatFeedItem,
+    TokenBudgetEntry,
+    Verdict,
+    VulnerabilityReport,
+)
 
 
 SCHEMA = """
@@ -49,6 +58,56 @@ CREATE TABLE IF NOT EXISTS vulnerability_reports (
   severity INTEGER NOT NULL,
   status TEXT NOT NULL,
   markdown_path TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS threat_feed_items (
+  source TEXT NOT NULL,
+  external_id TEXT NOT NULL,
+  title TEXT NOT NULL,
+  summary TEXT NOT NULL,
+  url TEXT NOT NULL,
+  category TEXT NOT NULL,
+  fetched_at TEXT NOT NULL,
+  PRIMARY KEY (source, external_id)
+);
+CREATE TABLE IF NOT EXISTS threat_attack_cases (
+  id TEXT PRIMARY KEY,
+  category TEXT NOT NULL,
+  subcategory TEXT NOT NULL,
+  sequence TEXT NOT NULL,
+  expected_safe_behavior TEXT NOT NULL,
+  severity INTEGER NOT NULL,
+  exploitability TEXT NOT NULL,
+  regression_candidate INTEGER NOT NULL,
+  source TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS coverage_map (
+  category TEXT PRIMARY KEY,
+  seed_count INTEGER NOT NULL,
+  generated_count INTEGER NOT NULL,
+  last_refreshed_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS token_budget_ledger (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  campaign_id TEXT NOT NULL,
+  agent TEXT NOT NULL,
+  action TEXT NOT NULL,
+  estimated_tokens INTEGER NOT NULL,
+  estimated_cost_usd REAL NOT NULL,
+  budget_usd REAL NOT NULL,
+  threshold TEXT NOT NULL,
+  detail TEXT NOT NULL,
+  created_at TEXT NOT NULL
+);
+CREATE TABLE IF NOT EXISTS agent_transitions (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  campaign_id TEXT NOT NULL,
+  from_node TEXT NOT NULL,
+  to_node TEXT NOT NULL,
+  status TEXT NOT NULL,
+  message_type TEXT NOT NULL,
+  payload_summary TEXT NOT NULL,
   created_at TEXT NOT NULL
 );
 """
@@ -145,6 +204,269 @@ def save_report(report: VulnerabilityReport) -> None:
         )
 
 
+def record_budget_entry(entry: TokenBudgetEntry) -> None:
+    with connect() as conn:
+        conn.execute(
+            """
+            INSERT INTO token_budget_ledger
+            (campaign_id, agent, action, estimated_tokens, estimated_cost_usd,
+             budget_usd, threshold, detail, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                entry.campaign_id,
+                entry.agent,
+                entry.action,
+                entry.estimated_tokens,
+                entry.estimated_cost_usd,
+                entry.budget_usd,
+                entry.threshold,
+                json.dumps(entry.detail),
+                entry.created_at.isoformat(),
+            ),
+        )
+
+
+def record_agent_transition(transition: AgentTransition) -> None:
+    with connect() as conn:
+        conn.execute(
+            """
+            INSERT INTO agent_transitions
+            (campaign_id, from_node, to_node, status, message_type, payload_summary, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                transition.campaign_id,
+                transition.from_node,
+                transition.to_node,
+                transition.status,
+                transition.message_type,
+                json.dumps(transition.payload_summary),
+                transition.created_at.isoformat(),
+            ),
+        )
+
+
+def fetch_agent_transitions(campaign_id: str | None = None, limit: int = 100) -> dict:
+    with connect() as conn:
+        if campaign_id:
+            rows = conn.execute(
+                "SELECT * FROM agent_transitions WHERE campaign_id = ? ORDER BY id ASC LIMIT ?",
+                (campaign_id, limit),
+            ).fetchall()
+        else:
+            rows = conn.execute("SELECT * FROM agent_transitions ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
+        node_rows = conn.execute(
+            """
+            SELECT to_node AS node, status, COUNT(*) AS count
+            FROM agent_transitions
+            GROUP BY to_node, status
+            ORDER BY to_node, status
+            """
+        ).fetchall()
+    return {
+        "transitions": [dict(row) for row in rows],
+        "node_counts": [dict(row) for row in node_rows],
+    }
+
+
+def save_threat_intel_state(items: List[ThreatFeedItem], cases: List[AttackCase]) -> None:
+    with connect() as conn:
+        for item in items:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO threat_feed_items
+                (source, external_id, title, summary, url, category, fetched_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
+                """,
+                (
+                    item.source,
+                    item.external_id,
+                    item.title,
+                    item.summary,
+                    item.url,
+                    item.category.value,
+                    item.fetched_at.isoformat(),
+                ),
+            )
+        for case in cases:
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO threat_attack_cases
+                (id, category, subcategory, sequence, expected_safe_behavior, severity,
+                 exploitability, regression_candidate, source, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+                """,
+                (
+                    case.id,
+                    case.category.value,
+                    case.subcategory,
+                    json.dumps(case.sequence),
+                    case.expected_safe_behavior,
+                    case.severity,
+                    case.exploitability,
+                    int(case.regression_candidate),
+                    case.source,
+                ),
+            )
+        coverage_rows = conn.execute(
+            """
+            SELECT category,
+                   SUM(CASE WHEN source LIKE '%: %' THEN 1 ELSE 0 END) AS generated_count,
+                   COUNT(*) AS total_count
+            FROM threat_attack_cases
+            GROUP BY category
+            """
+        ).fetchall()
+        for row in coverage_rows:
+            generated_count = int(row["generated_count"] or 0)
+            total_count = int(row["total_count"] or 0)
+            conn.execute(
+                """
+                INSERT OR REPLACE INTO coverage_map
+                (category, seed_count, generated_count, last_refreshed_at)
+                VALUES (?, ?, ?, datetime('now'))
+                """,
+                (row["category"], total_count - generated_count, generated_count),
+            )
+
+
+def fetch_generated_threat_cases() -> List[AttackCase]:
+    with connect() as conn:
+        rows = conn.execute("SELECT * FROM threat_attack_cases ORDER BY severity DESC, category, id").fetchall()
+    return [
+        AttackCase(
+            id=row["id"],
+            category=row["category"],
+            subcategory=row["subcategory"],
+            sequence=json.loads(row["sequence"]),
+            expected_safe_behavior=row["expected_safe_behavior"],
+            severity=row["severity"],
+            exploitability=row["exploitability"],
+            regression_candidate=bool(row["regression_candidate"]),
+            source=row["source"],
+        )
+        for row in rows
+    ]
+
+
+def fetch_threat_intel_state(limit: int = 50) -> dict:
+    with connect() as conn:
+        sources = conn.execute(
+            "SELECT source, COUNT(*) AS count, MAX(fetched_at) AS last_fetched_at FROM threat_feed_items GROUP BY source ORDER BY source"
+        ).fetchall()
+        coverage = conn.execute("SELECT * FROM coverage_map ORDER BY category").fetchall()
+        items = conn.execute(
+            "SELECT * FROM threat_feed_items ORDER BY fetched_at DESC, source, external_id LIMIT ?",
+            (limit,),
+        ).fetchall()
+        cases = conn.execute(
+            "SELECT * FROM threat_attack_cases ORDER BY severity DESC, category, id LIMIT ?",
+            (limit,),
+        ).fetchall()
+    return {
+        "sources": [dict(row) for row in sources],
+        "coverage_map": [dict(row) for row in coverage],
+        "feed_items": [dict(row) for row in items],
+        "generated_cases": [dict(row) for row in cases],
+    }
+
+
+def fetch_vulnerability_db(limit: int = 100) -> dict:
+    with connect() as conn:
+        rows = conn.execute(
+            """
+            SELECT vr.id,
+                   vr.title,
+                   vr.severity,
+                   vr.status,
+                   vr.markdown_path,
+                   vr.created_at,
+                   ar.case_id,
+                   ar.campaign_id,
+                   ar.category,
+                   ar.observed_behavior,
+                   ar.transport_error,
+                   v.verdict,
+                   v.confidence,
+                   v.rationale,
+                   v.should_regress,
+                   v.human_review_required
+            FROM vulnerability_reports vr
+            LEFT JOIN attack_results ar
+              ON ar.case_id = vr.case_id AND ar.campaign_id = vr.campaign_id
+            LEFT JOIN verdicts v
+              ON v.result_id = vr.case_id || ':' || vr.campaign_id
+            ORDER BY vr.severity DESC, vr.created_at DESC
+            LIMIT ?
+            """,
+            (limit,),
+        ).fetchall()
+        status_rows = conn.execute(
+            "SELECT status, COUNT(*) AS count FROM vulnerability_reports GROUP BY status ORDER BY status"
+        ).fetchall()
+        severity_rows = conn.execute(
+            "SELECT severity, COUNT(*) AS count FROM vulnerability_reports GROUP BY severity ORDER BY severity DESC"
+        ).fetchall()
+    return {
+        "findings": [dict(row) for row in rows],
+        "status_counts": [dict(row) for row in status_rows],
+        "severity_counts": [dict(row) for row in severity_rows],
+    }
+
+
+def fetch_token_budget_ledger(campaign_id: str | None = None, limit: int = 100) -> dict:
+    with connect() as conn:
+        if campaign_id:
+            rows = conn.execute(
+                "SELECT * FROM token_budget_ledger WHERE campaign_id = ? ORDER BY id DESC LIMIT ?",
+                (campaign_id, limit),
+            ).fetchall()
+            summary_rows = conn.execute(
+                """
+                SELECT campaign_id,
+                       agent,
+                       SUM(estimated_tokens) AS estimated_tokens,
+                       SUM(estimated_cost_usd) AS estimated_cost_usd,
+                       MAX(budget_usd) AS budget_usd,
+                       MAX(CASE threshold WHEN 'halt' THEN 2 WHEN 'warning' THEN 1 ELSE 0 END) AS max_threshold
+                FROM token_budget_ledger
+                WHERE campaign_id = ?
+                GROUP BY campaign_id, agent
+                ORDER BY estimated_cost_usd DESC
+                """,
+                (campaign_id,),
+            ).fetchall()
+        else:
+            rows = conn.execute("SELECT * FROM token_budget_ledger ORDER BY id DESC LIMIT ?", (limit,)).fetchall()
+            summary_rows = conn.execute(
+                """
+                SELECT campaign_id,
+                       agent,
+                       SUM(estimated_tokens) AS estimated_tokens,
+                       SUM(estimated_cost_usd) AS estimated_cost_usd,
+                       MAX(budget_usd) AS budget_usd,
+                       MAX(CASE threshold WHEN 'halt' THEN 2 WHEN 'warning' THEN 1 ELSE 0 END) AS max_threshold
+                FROM token_budget_ledger
+                GROUP BY campaign_id, agent
+                ORDER BY campaign_id DESC, estimated_cost_usd DESC
+                LIMIT ?
+                """,
+                (limit,),
+            ).fetchall()
+    threshold_names = {0: "normal", 1: "warning", 2: "halt"}
+    return {
+        "entries": [dict(row) for row in rows],
+        "summary": [
+            {
+                **{key: row[key] for key in row.keys() if key != "max_threshold"},
+                "threshold": threshold_names.get(row["max_threshold"], "normal"),
+            }
+            for row in summary_rows
+        ],
+    }
+
+
 def fetch_dashboard() -> dict:
     with connect() as conn:
         category_rows = conn.execute(
@@ -153,6 +475,31 @@ def fetch_dashboard() -> dict:
         verdict_rows = conn.execute("SELECT verdict, COUNT(*) AS count FROM verdicts GROUP BY verdict").fetchall()
         reports = conn.execute("SELECT * FROM vulnerability_reports ORDER BY created_at DESC LIMIT 20").fetchall()
         events = conn.execute("SELECT * FROM events ORDER BY id DESC LIMIT 30").fetchall()
+        threat_sources = conn.execute(
+            "SELECT source, COUNT(*) AS count, MAX(fetched_at) AS last_fetched_at FROM threat_feed_items GROUP BY source ORDER BY source"
+        ).fetchall()
+        coverage_map = conn.execute("SELECT * FROM coverage_map ORDER BY category").fetchall()
+        budget_rows = conn.execute(
+            """
+            SELECT campaign_id,
+                   SUM(estimated_tokens) AS estimated_tokens,
+                   SUM(estimated_cost_usd) AS estimated_cost_usd,
+                   MAX(budget_usd) AS budget_usd,
+                   MAX(CASE threshold WHEN 'halt' THEN 2 WHEN 'warning' THEN 1 ELSE 0 END) AS max_threshold
+            FROM token_budget_ledger
+            GROUP BY campaign_id
+            ORDER BY MAX(created_at) DESC
+            LIMIT 10
+            """
+        ).fetchall()
+        transition_rows = conn.execute(
+            """
+            SELECT to_node AS node, status, COUNT(*) AS count
+            FROM agent_transitions
+            GROUP BY to_node, status
+            ORDER BY to_node, status
+            """
+        ).fetchall()
         cost = conn.execute("SELECT COALESCE(SUM(cost_estimate_usd), 0) AS cost FROM attack_results").fetchone()["cost"]
         last = conn.execute("SELECT campaign_id FROM events ORDER BY id DESC LIMIT 1").fetchone()
     verdict_counts = {row["verdict"]: row["count"] for row in verdict_rows}
@@ -166,6 +513,19 @@ def fetch_dashboard() -> dict:
         "last_campaign_id": last["campaign_id"] if last else None,
         "reports": [dict(row) for row in reports],
         "events": [dict(row) for row in events],
+        "threat_sources": [dict(row) for row in threat_sources],
+        "coverage_map": [dict(row) for row in coverage_map],
+        "budget_ledger": [
+            {
+                "campaign_id": row["campaign_id"],
+                "estimated_tokens": row["estimated_tokens"],
+                "estimated_cost_usd": round(float(row["estimated_cost_usd"] or 0), 6),
+                "budget_usd": row["budget_usd"],
+                "threshold": {0: "normal", 1: "warning", 2: "halt"}.get(row["max_threshold"], "normal"),
+            }
+            for row in budget_rows
+        ],
+        "agent_transitions": [dict(row) for row in transition_rows],
     }
 
 
