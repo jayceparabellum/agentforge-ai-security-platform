@@ -140,30 +140,47 @@ def reports_index() -> str:
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>AgentForge Reports</title>
   <style>
-    :root {{ color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif; }}
-    body {{ margin: 0; background: #f6f7f9; color: #18202a; }}
-    header {{ padding: 28px 36px; background: #111827; color: white; }}
-    h1 {{ margin: 0; font-size: 28px; letter-spacing: 0; }}
-    header p {{ margin: 8px 0 0; color: #cbd5e1; max-width: 880px; }}
-    main {{ padding: 28px 36px; }}
-    section {{ background: white; border: 1px solid #dde3ea; border-radius: 8px; padding: 20px; }}
+    :root {{ color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif; --blue: #1769aa; --blue-dark: #0f4c81; --line: #cfd8e3; }}
+    body {{ margin: 0; background: #e9eef4; color: #1f2933; }}
+    .topbar {{ background: var(--blue); color: white; height: 52px; display: flex; align-items: center; justify-content: space-between; padding: 0 22px; box-shadow: 0 1px 3px rgba(0,0,0,.18); }}
+    .brand {{ font-size: 20px; font-weight: 700; letter-spacing: 0; }}
+    .target {{ font-size: 13px; opacity: .92; }}
+    .tabs {{ background: #f8fafc; border-bottom: 1px solid var(--line); padding: 0 22px; display: flex; gap: 2px; }}
+    .tab {{ color: #24425f; padding: 13px 18px; text-decoration: none; border-left: 1px solid transparent; border-right: 1px solid transparent; font-weight: 650; }}
+    .tab.active {{ background: white; color: var(--blue-dark); border-left-color: var(--line); border-right-color: var(--line); border-top: 3px solid var(--blue); padding-top: 10px; }}
+    .workspace {{ display: grid; grid-template-columns: 230px minmax(0, 1fr); min-height: calc(100vh - 98px); }}
+    aside {{ background: #f8fafc; border-right: 1px solid var(--line); padding: 18px 14px; }}
+    aside a {{ display: block; color: #34495e; padding: 9px 10px; border-radius: 4px; text-decoration: none; font-size: 14px; }}
+    aside a:hover {{ background: #e1edf7; }}
+    main {{ padding: 22px; }}
+    section {{ background: white; border: 1px solid var(--line); border-radius: 4px; padding: 18px; box-shadow: 0 1px 2px rgba(15, 23, 42, .05); }}
+    h1 {{ margin: 0 0 12px; font-size: 22px; letter-spacing: 0; }}
     table {{ width: 100%; border-collapse: collapse; }}
-    th, td {{ text-align: left; padding: 10px 8px; border-bottom: 1px solid #e5e7eb; font-size: 14px; }}
-    a {{ color: #1d4ed8; font-weight: 650; text-decoration: none; }}
-    .button-link {{ display: inline-block; background: #2563eb; color: white; border-radius: 6px; padding: 10px 14px; margin-top: 14px; }}
+    th {{ background: #edf3f8; color: #30475f; }}
+    th, td {{ text-align: left; padding: 9px 8px; border: 1px solid #dbe3ec; font-size: 14px; vertical-align: top; }}
+    a {{ color: #1769aa; font-weight: 650; text-decoration: none; }}
+    .button-link {{ display: inline-block; background: var(--blue); color: white; border-radius: 4px; padding: 9px 13px; margin-top: 14px; }}
+    @media (max-width: 760px) {{ .workspace {{ grid-template-columns: 1fr; }} aside {{ display: none; }} .topbar {{ align-items: flex-start; flex-direction: column; height: auto; gap: 4px; padding: 12px 18px; }} }}
   </style>
 </head>
 <body>
-  <header>
-    <h1>Captured Output Reports</h1>
-    <p>Full findings generated after the agentic workflow captures target responses, judge verdicts, approval state, and markdown report output.</p>
-  </header>
-  <main>
-    <section>
-      <table><thead><tr><th>Report</th><th>Severity</th><th>Status</th><th>Title</th><th>Campaign</th><th>Verdict</th></tr></thead><tbody>{report_rows}</tbody></table>
-      <a class="button-link" href="/">Back to Dashboard</a>
-    </section>
-  </main>
+  <div class="topbar"><div class="brand">AgentForge</div><div class="target">Target: {get_settings().target_base_url}</div></div>
+  <nav class="tabs"><a class="tab" href="/">ai-security-tool</a><a class="tab active" href="/reports">Results</a></nav>
+  <div class="workspace">
+    <aside>
+      <a href="/">Campaign Controls</a>
+      <a href="/reports">Output Reports</a>
+      <a href="/#review-queue">Review Queue</a>
+      <a href="/#observability">Observability</a>
+    </aside>
+    <main>
+      <section>
+        <h1>Captured Output Reports</h1>
+        <table><thead><tr><th>Report</th><th>Severity</th><th>Status</th><th>Title</th><th>Campaign</th><th>Verdict</th></tr></thead><tbody>{report_rows}</tbody></table>
+        <a class="button-link" href="/">Back to Tool</a>
+      </section>
+    </main>
+  </div>
 </body>
 </html>
 """
@@ -184,28 +201,44 @@ def report_detail(report_id: str) -> str:
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>{html.escape(report['id'])} | AgentForge</title>
   <style>
-    :root {{ color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif; }}
-    body {{ margin: 0; background: #f6f7f9; color: #18202a; }}
-    header {{ padding: 28px 36px; background: #111827; color: white; }}
-    h1 {{ margin: 0; font-size: 28px; letter-spacing: 0; }}
-    header p {{ margin: 8px 0 0; color: #cbd5e1; max-width: 980px; }}
-    main {{ padding: 28px 36px; display: grid; gap: 22px; }}
-    section {{ background: white; border: 1px solid #dde3ea; border-radius: 8px; padding: 20px; }}
-    .grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }}
-    .metric {{ border: 1px solid #e3e8ef; border-radius: 8px; padding: 14px; background: #fbfcfd; }}
+    :root {{ color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif; --blue: #1769aa; --blue-dark: #0f4c81; --line: #cfd8e3; }}
+    body {{ margin: 0; background: #e9eef4; color: #1f2933; }}
+    .topbar {{ background: var(--blue); color: white; height: 52px; display: flex; align-items: center; justify-content: space-between; padding: 0 22px; box-shadow: 0 1px 3px rgba(0,0,0,.18); }}
+    .brand {{ font-size: 20px; font-weight: 700; letter-spacing: 0; }}
+    .target {{ font-size: 13px; opacity: .92; }}
+    .tabs {{ background: #f8fafc; border-bottom: 1px solid var(--line); padding: 0 22px; display: flex; gap: 2px; }}
+    .tab {{ color: #24425f; padding: 13px 18px; text-decoration: none; border-left: 1px solid transparent; border-right: 1px solid transparent; font-weight: 650; }}
+    .tab.active {{ background: white; color: var(--blue-dark); border-left-color: var(--line); border-right-color: var(--line); border-top: 3px solid var(--blue); padding-top: 10px; }}
+    .workspace {{ display: grid; grid-template-columns: 230px minmax(0, 1fr); min-height: calc(100vh - 98px); }}
+    aside {{ background: #f8fafc; border-right: 1px solid var(--line); padding: 18px 14px; }}
+    aside a {{ display: block; color: #34495e; padding: 9px 10px; border-radius: 4px; text-decoration: none; font-size: 14px; }}
+    aside a:hover {{ background: #e1edf7; }}
+    main {{ padding: 22px; display: grid; gap: 18px; }}
+    section {{ background: white; border: 1px solid var(--line); border-radius: 4px; padding: 18px; box-shadow: 0 1px 2px rgba(15, 23, 42, .05); }}
+    h1 {{ margin: 0; font-size: 22px; letter-spacing: 0; }}
+    h2 {{ font-size: 17px; margin-top: 0; color: #243b53; }}
+    .grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }}
+    .metric {{ border: 1px solid #dbe3ec; border-radius: 4px; padding: 12px; background: #fbfdff; }}
     .metric span {{ display: block; color: #526070; font-size: 13px; }}
     .metric strong {{ display: block; margin-top: 6px; font-size: 18px; overflow-wrap: anywhere; }}
     pre {{ white-space: pre-wrap; overflow-wrap: anywhere; background: #0f172a; color: #e5edf7; border-radius: 8px; padding: 18px; line-height: 1.5; }}
-    a {{ color: #1d4ed8; font-weight: 650; text-decoration: none; }}
-    .button-link {{ display: inline-block; background: #2563eb; color: white; border-radius: 6px; padding: 10px 14px; }}
+    a {{ color: #1769aa; font-weight: 650; text-decoration: none; }}
+    .button-link {{ display: inline-block; background: var(--blue); color: white; border-radius: 4px; padding: 9px 13px; margin-right: 8px; }}
+    @media (max-width: 760px) {{ .workspace {{ grid-template-columns: 1fr; }} aside {{ display: none; }} .topbar {{ align-items: flex-start; flex-direction: column; height: auto; gap: 4px; padding: 12px 18px; }} }}
   </style>
 </head>
 <body>
-  <header>
-    <h1>{html.escape(report['id'])}</h1>
-    <p>{html.escape(report['title'])}</p>
-  </header>
+  <div class="topbar"><div class="brand">AgentForge</div><div class="target">Target: {get_settings().target_base_url}</div></div>
+  <nav class="tabs"><a class="tab" href="/">ai-security-tool</a><a class="tab active" href="/reports">Results</a></nav>
+  <div class="workspace">
+  <aside>
+    <a href="/reports">Output Reports</a>
+    <a href="/">Campaign Controls</a>
+    <a href="/#review-queue">Review Queue</a>
+    <a href="/#observability">Observability</a>
+  </aside>
   <main>
+    <h1>{html.escape(report['id'])}: {html.escape(report['title'])}</h1>
     <section>
       <div class="grid">
         <div class="metric"><span>Campaign</span><strong>{html.escape(report['campaign_id'])}</strong></div>
@@ -235,9 +268,10 @@ def report_detail(report_id: str) -> str:
       <h2>Markdown Report Output</h2>
       <pre>{markdown_content}</pre>
       <a class="button-link" href="/reports">All Reports</a>
-      <a class="button-link" href="/">Dashboard</a>
+      <a class="button-link" href="/">Tool</a>
     </section>
   </main>
+  </div>
 </body>
 </html>
 """
@@ -276,7 +310,7 @@ def index() -> str:
     threat_sources = "".join(
         f"<tr><td>{row['source']}</td><td>{row['count']}</td><td>{row['last_fetched_at']}</td></tr>"
         for row in data["threat_sources"]
-    ) or "<tr><td colspan='3'>No threat feed data loaded yet. Refresh Layer 1 to populate shared state.</td></tr>"
+    ) or "<tr><td colspan='3'>No threat feed data loaded yet. Refresh threat intelligence to populate shared state.</td></tr>"
     coverage_rows = "".join(
         f"<tr><td>{row['category'].replace('_', ' ')}</td><td>{row['seed_count']}</td><td>{row['generated_count']}</td><td>{row['last_refreshed_at']}</td></tr>"
         for row in data["coverage_map"]
@@ -288,7 +322,7 @@ def index() -> str:
     transition_rows = "".join(
         f"<tr><td>{row['node']}</td><td>{row['status']}</td><td>{row['count']}</td></tr>"
         for row in data["agent_transitions"]
-    ) or "<tr><td colspan='3'>No Layer 2 transitions recorded yet.</td></tr>"
+    ) or "<tr><td colspan='3'>No agent transitions recorded yet.</td></tr>"
     provider_rows = "".join(
         f"<tr><td>{agent}</td><td>{route['provider']}</td><td>{route['model']}</td><td>{route['data_path']}</td></tr>"
         for agent, route in get_settings().provider_routes.items()
@@ -312,7 +346,7 @@ def index() -> str:
     trace_rows = "".join(
         f"<tr><td>{row['agent']}</td><td>{row['event_type']}</td><td>{row['status']}</td><td>{row['count']}</td></tr>"
         for row in data["trace_summary"]
-    ) or "<tr><td colspan='4'>No Layer 6 traces recorded yet.</td></tr>"
+    ) or "<tr><td colspan='4'>No traces recorded yet.</td></tr>"
     approval_rows = "".join(
         f"<tr><td>{row['report_id']}</td><td>{row['severity']}</td><td>{row['status']}</td><td>{row.get('title') or ''}</td><td><button onclick=\"runControl('/api/approvals/{row['id']}/approve', this)\">Approve</button> <button onclick=\"runControl('/api/approvals/{row['id']}/reject', this)\">Reject</button></td></tr>"
         for row in data["approval_queue"]
@@ -325,48 +359,69 @@ def index() -> str:
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>AgentForge</title>
   <style>
-    :root {{ color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif; }}
-    body {{ margin: 0; background: #f6f7f9; color: #18202a; }}
-    header {{ padding: 28px 36px; background: #111827; color: white; }}
-    h1 {{ margin: 0; font-size: 28px; letter-spacing: 0; }}
-    header p {{ margin: 8px 0 0; color: #cbd5e1; max-width: 880px; }}
-    main {{ padding: 28px 36px; display: grid; gap: 22px; }}
-    section {{ background: white; border: 1px solid #dde3ea; border-radius: 8px; padding: 20px; }}
-    .grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 14px; }}
-    .metric {{ border: 1px solid #e3e8ef; border-radius: 8px; padding: 14px; background: #fbfcfd; }}
+    :root {{ color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, sans-serif; --blue: #1769aa; --blue-dark: #0f4c81; --line: #cfd8e3; }}
+    body {{ margin: 0; background: #e9eef4; color: #1f2933; }}
+    .topbar {{ background: var(--blue); color: white; height: 52px; display: flex; align-items: center; justify-content: space-between; padding: 0 22px; box-shadow: 0 1px 3px rgba(0,0,0,.18); }}
+    .brand {{ font-size: 20px; font-weight: 700; letter-spacing: 0; }}
+    .target {{ font-size: 13px; opacity: .92; }}
+    .tabs {{ background: #f8fafc; border-bottom: 1px solid var(--line); padding: 0 22px; display: flex; gap: 2px; }}
+    .tab {{ color: #24425f; padding: 13px 18px; text-decoration: none; border-left: 1px solid transparent; border-right: 1px solid transparent; font-weight: 650; }}
+    .tab.active {{ background: white; color: var(--blue-dark); border-left-color: var(--line); border-right-color: var(--line); border-top: 3px solid var(--blue); padding-top: 10px; }}
+    .workspace {{ display: grid; grid-template-columns: 230px minmax(0, 1fr); min-height: calc(100vh - 98px); }}
+    aside {{ background: #f8fafc; border-right: 1px solid var(--line); padding: 18px 14px; }}
+    aside a {{ display: block; color: #34495e; padding: 9px 10px; border-radius: 4px; text-decoration: none; font-size: 14px; }}
+    aside a:hover {{ background: #e1edf7; }}
+    main {{ padding: 22px; display: grid; gap: 18px; }}
+    section {{ background: white; border: 1px solid var(--line); border-radius: 4px; padding: 18px; box-shadow: 0 1px 2px rgba(15, 23, 42, .05); }}
+    h1 {{ margin: 0; font-size: 22px; letter-spacing: 0; }}
+    h2 {{ margin: 0 0 12px; font-size: 18px; color: #243b53; }}
+    h3 {{ margin: 16px 0 8px; font-size: 15px; color: #334e68; }}
+    .grid {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }}
+    .metric {{ border: 1px solid #dbe3ec; border-radius: 4px; padding: 12px; background: #fbfdff; }}
     .metric span {{ display: block; color: #526070; text-transform: capitalize; font-size: 13px; }}
-    .metric strong {{ display: block; margin-top: 6px; font-size: 24px; }}
+    .metric strong {{ display: block; margin-top: 6px; font-size: 22px; }}
     table {{ width: 100%; border-collapse: collapse; }}
-    th, td {{ text-align: left; padding: 10px 8px; border-bottom: 1px solid #e5e7eb; font-size: 14px; }}
-    button, .button-link {{ background: #2563eb; color: white; border: 0; border-radius: 6px; padding: 10px 14px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; min-height: 20px; }}
+    th {{ background: #edf3f8; color: #30475f; }}
+    th, td {{ text-align: left; padding: 9px 8px; border: 1px solid #dbe3ec; font-size: 14px; vertical-align: top; }}
+    button, .button-link {{ background: var(--blue); color: white; border: 0; border-radius: 4px; padding: 9px 13px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; min-height: 20px; font-weight: 650; }}
     .control-row {{ display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }}
     .secondary-control {{ background: #1f6f5b; }}
+    .subtle {{ color: #526070; font-size: 13px; margin-top: 0; }}
     code {{ background: #eef2f7; padding: 2px 5px; border-radius: 4px; }}
-    a {{ color: #1d4ed8; font-weight: 650; text-decoration: none; }}
+    a {{ color: #1769aa; font-weight: 650; text-decoration: none; }}
+    @media (max-width: 760px) {{ .workspace {{ grid-template-columns: 1fr; }} aside {{ display: none; }} .topbar {{ align-items: flex-start; flex-direction: column; height: auto; gap: 4px; padding: 12px 18px; }} }}
   </style>
 </head>
 <body>
-  <header>
-    <h1>AgentForge</h1>
-    <p>Multi-agent adversarial evaluation platform for the deployed OpenEMR Clinical Co-Pilot target.</p>
-  </header>
+  <div class="topbar"><div class="brand">AgentForge</div><div class="target">Target: {get_settings().target_base_url}</div></div>
+  <nav class="tabs"><a class="tab active" href="/">ai-security-tool</a><a class="tab" href="/reports">Results</a></nav>
+  <div class="workspace">
+    <aside>
+      <a href="#campaign-controls">Campaign Controls</a>
+      <a href="#target-system">Target System</a>
+      <a href="#shared-state">Shared State</a>
+      <a href="#review-queue">Review Queue</a>
+      <a href="#observability">Observability</a>
+      <a href="/reports">Output Reports</a>
+    </aside>
   <main>
-    <section>
+    <h1>AI Security Tool</h1>
+    <section id="campaign-controls">
       <h2>Campaign Controls</h2>
-      <p>Target: <code>{get_settings().target_base_url}</code> | Cadence: <code>{get_settings().agentforge_campaign_cadence}</code> | Budget: <code>${get_settings().campaign_budget_usd}</code></p>
+      <p class="subtle">Cadence: <code>{get_settings().agentforge_campaign_cadence}</code> | Budget: <code>${get_settings().campaign_budget_usd}</code></p>
       <div class="control-row">
-        <button onclick="runControl('/api/threat-intel/refresh', this)">Layer 1 Refresh Intel</button>
-        <button onclick="runControl('/api/campaigns/run?intensity=smoke', this)">Layer 2 Run Agent Workflow</button>
-        <a class="button-link" href="#shared-state">Layer 3 Shared State</a>
-        <button onclick="runControl('/api/layer4/fuzz', this)">Layer 4 Run Fuzzer</button>
-        <button class="secondary-control" onclick="runControl('/api/layer4/regression', this)">Layer 4 Replay Regressions</button>
-        <button onclick="runControl('/api/target/probe', this)">Layer 5 Probe Target</button>
-        <a class="button-link" href="/reports">Layer 6 Reports</a>
+        <button onclick="runControl('/api/threat-intel/refresh', this)">Refresh Intel</button>
+        <button onclick="runControl('/api/campaigns/run?intensity=smoke', this)">Run Agent Workflow</button>
+        <a class="button-link" href="#shared-state">Shared State</a>
+        <button onclick="runControl('/api/layer4/fuzz', this)">Run Fuzzer</button>
+        <button class="secondary-control" onclick="runControl('/api/layer4/regression', this)">Replay Regressions</button>
+        <button onclick="runControl('/api/target/probe', this)">Probe Target</button>
+        <a class="button-link" href="/reports">Results</a>
       </div>
       <span id="control-status" role="status"></span>
     </section>
-    <section>
-      <h2>Layer 5 Target System</h2>
+    <section id="target-system">
+      <h2>Target System</h2>
       <table><thead><tr><th>Name</th><th>Base URL</th><th>Chat Path</th><th>Status</th><th>Notes</th></tr></thead><tbody>{target_profile_rows}</tbody></table>
       <h3>Endpoint Probes</h3>
       <table><thead><tr><th>Method</th><th>Path</th><th>Status</th><th>Reachable</th><th>Likely Chat</th></tr></thead><tbody>{target_probe_rows}</tbody></table>
@@ -387,12 +442,12 @@ def index() -> str:
       <h3>Coverage Map</h3>
       <table><thead><tr><th>Category</th><th>Seed Cases</th><th>Generated Cases</th><th>Last Refreshed</th></tr></thead><tbody>{coverage_rows}</tbody></table>
     </section>
-    <section>
+    <section id="review-queue">
       <h2>Review Queue</h2>
       <table><thead><tr><th>ID</th><th>Severity</th><th>Status</th><th>Title</th><th>Report</th></tr></thead><tbody>{reports}</tbody></table>
     </section>
     <section>
-      <h2>Layer 7 Human Trust Boundary</h2>
+      <h2>Human Review</h2>
       <table><thead><tr><th>Report</th><th>Severity</th><th>Status</th><th>Title</th><th>Action</th></tr></thead><tbody>{approval_rows}</tbody></table>
     </section>
     <section>
@@ -400,17 +455,17 @@ def index() -> str:
       <table><thead><tr><th>Campaign</th><th>Tokens</th><th>Spend</th><th>Budget</th><th>Threshold</th></tr></thead><tbody>{budget_rows}</tbody></table>
     </section>
     <section>
-      <h2>Layer 2 Multi-Agent Core</h2>
+      <h2>Multi-Agent Core</h2>
       <table><thead><tr><th>Node</th><th>Status</th><th>Transitions</th></tr></thead><tbody>{transition_rows}</tbody></table>
       <h3>Provider Routes</h3>
       <table><thead><tr><th>Path</th><th>Provider</th><th>Model</th><th>Data Path</th></tr></thead><tbody>{provider_rows}</tbody></table>
     </section>
-    <section>
-      <h2>Layer 6 Observability</h2>
+    <section id="observability">
+      <h2>Observability</h2>
       <table><thead><tr><th>Agent</th><th>Event Type</th><th>Status</th><th>Count</th></tr></thead><tbody>{trace_rows}</tbody></table>
     </section>
     <section>
-      <h2>Layer 4 Deterministic Tooling</h2>
+      <h2>Deterministic Tooling</h2>
       <h3>Fuzzer Coverage</h3>
       <table><thead><tr><th>Category</th><th>Generated Cases</th></tr></thead><tbody>{fuzz_rows}</tbody></table>
       <h3>Regression Replay</h3>
@@ -421,6 +476,7 @@ def index() -> str:
       <ul>{events}</ul>
     </section>
   </main>
+  </div>
   <script>
     async function runControl(path, button) {{
       const status = document.getElementById('control-status');
