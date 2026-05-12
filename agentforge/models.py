@@ -29,6 +29,24 @@ class AttackCase(BaseModel):
     source: str = "seed"
 
 
+class ThreatFeedItem(BaseModel):
+    source: str
+    external_id: str
+    title: str
+    summary: str
+    url: str
+    category: AttackCategory
+    fetched_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class ThreatIntelRefreshResult(BaseModel):
+    fetched_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    source_counts: Dict[str, int]
+    generated_case_count: int
+    snapshot_paths: List[str]
+    errors: Dict[str, str] = Field(default_factory=dict)
+
+
 class CampaignBrief(BaseModel):
     id: str = Field(default_factory=lambda: f"campaign-{uuid4().hex[:8]}")
     target_url: str

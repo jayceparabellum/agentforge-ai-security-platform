@@ -1,0 +1,74 @@
+[
+  {
+    "source": "MITRE ATLAS",
+    "external_id": "CaseStudySubmission",
+    "title": "Case Study Report",
+    "summary": "MITRE ATLAS technique or case-study data from `.github/ISSUE_TEMPLATE/CaseStudySubmission.yaml`.",
+    "url": "https://raw.githubusercontent.com/mitre-atlas/atlas-data/main/.github/ISSUE_TEMPLATE/CaseStudySubmission.yaml",
+    "category": "identity_role",
+    "fetched_at": "2026-05-12T05:15:50.992868Z"
+  },
+  {
+    "source": "MITRE ATLAS",
+    "external_id": "Feedback",
+    "title": "Feedback",
+    "summary": "MITRE ATLAS technique or case-study data from `.github/ISSUE_TEMPLATE/Feedback.yaml`.",
+    "url": "https://raw.githubusercontent.com/mitre-atlas/atlas-data/main/.github/ISSUE_TEMPLATE/Feedback.yaml",
+    "category": "identity_role",
+    "fetched_at": "2026-05-12T05:15:51.320754Z"
+  },
+  {
+    "source": "MITRE ATLAS",
+    "external_id": "TechniqueSubmission",
+    "title": "Technique Feedback",
+    "summary": "MITRE ATLAS technique or case-study data from `.github/ISSUE_TEMPLATE/TechniqueSubmission.yaml`.",
+    "url": "https://raw.githubusercontent.com/mitre-atlas/atlas-data/main/.github/ISSUE_TEMPLATE/TechniqueSubmission.yaml",
+    "category": "identity_role",
+    "fetched_at": "2026-05-12T05:15:51.441396Z"
+  },
+  {
+    "source": "MITRE ATLAS",
+    "external_id": ".gitlab-ci",
+    "title": ".Gitlab Ci",
+    "summary": "MITRE ATLAS technique or case-study data from `.gitlab-ci.yml`.",
+    "url": "https://raw.githubusercontent.com/mitre-atlas/atlas-data/main/.gitlab-ci.yml",
+    "category": "data_exfiltration",
+    "fetched_at": "2026-05-12T05:15:51.546103Z"
+  },
+  {
+    "source": "MITRE ATLAS",
+    "external_id": "AML.CS0000",
+    "title": "Evasion of Deep Learning Detector for Malware C&C Traffic",
+    "summary": "MITRE ATLAS technique or case-study data from `data/case-studies/AML.CS0000.yaml`.",
+    "url": "https://raw.githubusercontent.com/mitre-atlas/atlas-data/main/data/case-studies/AML.CS0000.yaml",
+    "category": "data_exfiltration",
+    "fetched_at": "2026-05-12T05:15:51.677593Z"
+  },
+  {
+    "source": "MITRE ATLAS",
+    "external_id": "AML.CS0001",
+    "title": "Botnet Domain Generation Algorithm (DGA) Detection Evasion",
+    "summary": "MITRE ATLAS technique or case-study data from `data/case-studies/AML.CS0001.yaml`.",
+    "url": "https://raw.githubusercontent.com/mitre-atlas/atlas-data/main/data/case-studies/AML.CS0001.yaml",
+    "category": "data_exfiltration",
+    "fetched_at": "2026-05-12T05:15:51.814913Z"
+  },
+  {
+    "source": "MITRE ATLAS",
+    "external_id": "AML.CS0002",
+    "title": "VirusTotal Poisoning",
+    "summary": "MITRE ATLAS technique or case-study data from `data/case-studies/AML.CS0002.yaml`.",
+    "url": "https://raw.githubusercontent.com/mitre-atlas/atlas-data/main/data/case-studies/AML.CS0002.yaml",
+    "category": "data_exfiltration",
+    "fetched_at": "2026-05-12T05:15:51.905495Z"
+  },
+  {
+    "source": "MITRE ATLAS",
+    "external_id": "AML.CS0003",
+    "title": "Bypassing Cylance's AI Malware Detection",
+    "summary": "MITRE ATLAS technique or case-study data from `data/case-studies/AML.CS0003.yaml`.",
+    "url": "https://raw.githubusercontent.com/mitre-atlas/atlas-data/main/data/case-studies/AML.CS0003.yaml",
+    "category": "data_exfiltration",
+    "fetched_at": "2026-05-12T05:15:52.030540Z"
+  }
+]

@@ -3,6 +3,7 @@ from __future__ import annotations
 from fastapi import BackgroundTasks, FastAPI
 from fastapi.responses import HTMLResponse
 
+from agentforge.agents.threat_intel import ThreatIntelAgent
 from agentforge.campaign import run_campaign
 from agentforge.config import get_settings
 from agentforge.storage import fetch_dashboard
@@ -33,6 +34,11 @@ async def run_campaign_endpoint(intensity: str = "smoke") -> dict:
 async def schedule_trigger(background_tasks: BackgroundTasks) -> dict:
     background_tasks.add_task(run_campaign, "scheduled")
     return {"queued": True, "cadence": get_settings().agentforge_campaign_cadence}
+
+
+@app.post("/api/threat-intel/refresh")
+def refresh_threat_intel() -> dict:
+    return ThreatIntelAgent().refresh().model_dump(mode="json")
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -85,6 +91,7 @@ def index() -> str:
       <h2>Campaign Controls</h2>
       <p>Target: <code>{get_settings().target_base_url}</code> | Cadence: <code>{get_settings().agentforge_campaign_cadence}</code> | Budget: <code>${get_settings().campaign_budget_usd}</code></p>
       <button onclick="fetch('/api/campaigns/run?intensity=smoke', {{method:'POST'}}).then(() => location.reload())">Run Smoke Campaign</button>
+      <button onclick="fetch('/api/threat-intel/refresh', {{method:'POST'}}).then(() => location.reload())">Refresh Threat Intel</button>
     </section>
     <section>
       <h2>Coverage</h2>

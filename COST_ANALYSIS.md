@@ -9,6 +9,7 @@ AgentForge defaults to weekly scheduled campaigns because it is the most cost-ef
 - Default campaign budget: `$2.50`.
 - Deterministic fallback: near-zero LLM cost.
 - Hosted model mode: Red Team and Documentation via OpenRouter, Judge via direct provider.
+- Threat intelligence refresh: mostly deterministic HTTP fetch and hash work; no LLM spend in the deployed MVP.
 
 ## Scale Tiers
 
@@ -27,3 +28,4 @@ At higher scale, architecture changes. The Red Team Agent should move to a cheap
 
 Weekly scheduled campaigns are recommended for the current project. They are frequent enough to show continuous testing and regression behavior, but conservative enough to avoid runaway token usage. Biweekly is acceptable once the platform has a stable baseline and fewer target changes.
 
+Threat intelligence refresh runs twice per month. This catches new source updates without adding meaningful token cost because the current implementation uses deterministic mapping rather than LLM normalization.

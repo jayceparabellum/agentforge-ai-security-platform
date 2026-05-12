@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     campaign_budget_usd: float = 2.50
     agentforge_campaign_cadence: str = "weekly"
     database_path: str = "agentforge.db"
+    threat_intel_max_generated_cases: int = Field(default=12, ge=1, le=100)
+    nvd_keyword_query: str = "LLM AI machine learning"
     openrouter_api_key: Optional[str] = None
     anthropic_api_key: Optional[str] = None
     langfuse_public_key: Optional[str] = None

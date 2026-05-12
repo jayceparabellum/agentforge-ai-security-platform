@@ -23,12 +23,14 @@ One MVP limitation is intentionally visible: the OpenEMR application is reachabl
 | Render Blueprint | `exs-d81aqof7f7vs73dfgng0` |
 | Web service | `agentforge-ai-security-platform` deployed |
 | Scheduled job | `agentforge-weekly-campaign` deployed |
+| Threat intel job | `agentforge-threat-intel-refresh` added for Blueprint sync |
 | Source repo for Render | GitHub `jayceparabellum/agentforge-ai-security-platform` |
 | Target system | `https://openemr-js46.onrender.com` |
 | Campaign cadence | Weekly, Monday 06:00 UTC |
 | Campaign budget | `$2.50` default |
 | Local verification | `pytest` passed on Mac mini |
 | Live smoke behavior | Campaign controls ran and populated review findings |
+| Layer 1 behavior | Fetches OWASP LLM Top 10, MITRE ATLAS, NIST AI 600-1, and NVD CVE 2.0; normalizes external items into generated seed cases |
 | Known integration gap | Confirm final `TARGET_CHAT_PATH` for the Clinical Co-Pilot chat endpoint |
 
 ## System Diagram
@@ -39,7 +41,7 @@ One MVP limitation is intentionally visible: the OpenEMR application is reachabl
 
 | Agent | Responsibility | Inputs | Outputs | Trust Level |
 | --- | --- | --- | --- | --- |
-| Threat Intelligence Agent | Load and normalize external security techniques into seed templates | OWASP, MITRE ATLAS, NIST AI RMF, NVD, local JSON seeds | Structured attack cases and coverage gaps | Low |
+| Threat Intelligence Agent | Fetch, snapshot, and normalize external security techniques into seed templates | OWASP, MITRE ATLAS, NIST AI RMF, NVD CVE 2.0, local JSON seeds | Structured attack cases and coverage gaps | Low |
 | Orchestrator Agent | Prioritize campaigns and enforce budget | Coverage map, open findings, cost ledger, target URL | Campaign brief | Medium |
 | Red Team Agent | Generate and mutate adversarial payloads | Campaign brief, seed cases, prior outcomes | Attack sequences | High autonomy within budget |
 | Judge Agent | Evaluate target behavior independently | Attack payload, target response, rubric | Verdict JSON | High for verdicts |
@@ -55,6 +57,8 @@ One MVP limitation is intentionally visible: the OpenEMR application is reachabl
 | Target adapter | `agentforge/target.py` with URL allowlist |
 | Shared state | SQLite tables for events, attack results, verdicts, and reports |
 | Seed evals | `agentforge/data/seed_cases.json` and `evals/seed_cases.json` |
+| Threat feeds | `agentforge/data/threat_feeds/*.json` snapshots |
+| Generated threat cases | `agentforge/data/generated_threat_cases.json` |
 | Rubrics | `agentforge/data/rubrics.json` |
 | Reports | Markdown files in `reports/` |
 | Deployment | `Dockerfile` and `render.yaml` |
@@ -88,6 +92,31 @@ python -m agentforge.run_campaign --intensity scheduled
 ```
 
 The web dashboard can also trigger a smoke campaign manually through the Campaign Controls panel.
+
+## Threat Intelligence Layer
+
+Layer 1 is now implemented as an operational feed refresh pipeline rather than only a static local seed loader. The refresh command is:
+
+```bash
+python -m agentforge.run_threat_intel
+```
+
+It performs four feed operations:
+
+- Downloads and hashes the official OWASP LLM Top 10 2025 PDF, then maps the ten LLM risk categories into AgentForge attack categories.
+- Reads the MITRE ATLAS `atlas-data` repository through the GitHub API and snapshots selected technique/case-study records.
+- Downloads and hashes the NIST AI 600-1 Generative AI Profile PDF, then maps core governance and measurement concerns into evaluation seeds.
+- Calls the NVD CVE 2.0 API with `NVD_KEYWORD_QUERY` and snapshots any matching CVE records.
+
+The normalization output is written to `agentforge/data/generated_threat_cases.json`. Campaigns automatically load both the local baseline seeds and these generated Layer 1 seeds. Feed failures are non-blocking: the failed source is recorded in the threat-intel refresh result, while the platform continues with the last available local/generated seed set.
+
+Render now includes a scheduled `agentforge-threat-intel-refresh` cron job using this schedule:
+
+```yaml
+schedule: "0 5 1,15 * *"
+```
+
+That approximates the 14-day cadence in the original architecture while staying simple enough for Render cron.
 
 ## Regression Harness
 
@@ -133,4 +162,4 @@ The deployed code is provider-agnostic today and runs without paid LLM credentia
 - Rubric judging is deterministic and cheap, but a validated LLM judge should be added before relying on subtle semantic verdicts.
 - Weekly campaigns are cost-effective, but they discover regressions more slowly than daily smoke tests.
 - GitHub is the active deployment source for Render. The Gauntlet GitLab remote can be kept as a mirror once authentication is available.
-
+- NVD keyword search can return zero records depending on query terms and NVD availability; the refresh still snapshots the empty source result and reports source counts honestly.

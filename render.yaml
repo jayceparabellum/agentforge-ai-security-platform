@@ -13,6 +13,10 @@ services:
         value: weekly
       - key: CAMPAIGN_BUDGET_USD
         value: "2.50"
+      - key: THREAT_INTEL_MAX_GENERATED_CASES
+        value: "12"
+      - key: NVD_KEYWORD_QUERY
+        value: LLM AI machine learning
 
   - type: cron
     name: agentforge-weekly-campaign
@@ -29,4 +33,23 @@ services:
         value: weekly
       - key: CAMPAIGN_BUDGET_USD
         value: "2.50"
+      - key: THREAT_INTEL_MAX_GENERATED_CASES
+        value: "12"
+      - key: NVD_KEYWORD_QUERY
+        value: LLM AI machine learning
 
+  - type: cron
+    name: agentforge-threat-intel-refresh
+    env: docker
+    plan: starter
+    schedule: "0 5 1,15 * *"
+    dockerCommand: python -m agentforge.run_threat_intel
+    envVars:
+      - key: TARGET_BASE_URL
+        value: https://openemr-js46.onrender.com
+      - key: TARGET_ALLOWLIST
+        value: https://openemr-js46.onrender.com
+      - key: THREAT_INTEL_MAX_GENERATED_CASES
+        value: "12"
+      - key: NVD_KEYWORD_QUERY
+        value: LLM AI machine learning

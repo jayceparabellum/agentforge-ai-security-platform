@@ -22,6 +22,8 @@ This is a separate application, not an OpenEMR fork. It runs authorized adversar
 
 - Runs authorized adversarial evaluations against `TARGET_ALLOWLIST`.
 - Separates responsibilities across Threat Intelligence, Orchestrator, Red Team, Judge, and Documentation agents.
+- Refreshes external threat-intelligence feeds from OWASP LLM Top 10, MITRE ATLAS, NIST AI RMF, and NVD CVE 2.0.
+- Normalizes fetched threat items into generated adversarial seed cases.
 - Stores agent traces, attack results, verdicts, and report metadata in SQLite.
 - Provides a FastAPI dashboard and JSON API for reviewing findings.
 - Ships with a Dockerfile and Render Blueprint config.
@@ -68,6 +70,12 @@ Run a smoke campaign:
 python -m agentforge.run_campaign --intensity smoke
 ```
 
+Refresh Layer 1 threat intelligence:
+
+```bash
+python -m agentforge.run_threat_intel
+```
+
 ## Render Deployment
 
 Render deploys this repo through `render.yaml`.
@@ -82,6 +90,7 @@ Deployed Blueprint services:
 
 - `agentforge-ai-security-platform`: web dashboard/API.
 - `agentforge-weekly-campaign`: weekly scheduled campaign runner.
+- `agentforge-threat-intel-refresh`: scheduled threat-intelligence refresh.
 
 Default environment:
 
@@ -91,6 +100,8 @@ TARGET_ALLOWLIST=https://openemr-js46.onrender.com
 TARGET_CHAT_PATH=/api/copilot/chat
 AGENTFORGE_CAMPAIGN_CADENCE=weekly
 CAMPAIGN_BUDGET_USD=2.50
+THREAT_INTEL_MAX_GENERATED_CASES=12
+NVD_KEYWORD_QUERY=LLM AI machine learning
 ```
 
 The default cron schedule is:
@@ -101,15 +112,22 @@ schedule: "0 6 * * 1"
 
 That runs every Monday at 06:00 UTC. Weekly is recommended for the assignment because it gives recurring regression evidence without unnecessary token spend. Biweekly can be configured later if cost becomes more important than regression freshness.
 
+Threat intelligence refresh runs on the 1st and 15th of each month:
+
+```yaml
+schedule: "0 5 1,15 * *"
+```
+
 ## Review Workflow
 
 1. The weekly cron starts a scheduled campaign.
-2. The Orchestrator selects high-priority seed cases.
-3. The Red Team Agent creates bounded variants.
-4. The target client sends payload sequences to the configured Clinical Co-Pilot endpoint.
-5. The Judge Agent issues `pass`, `fail`, or `partial` verdicts using versioned rubrics.
-6. The Documentation Agent writes markdown reports for `fail` and `partial` cases.
-7. The dashboard shows the review queue, coverage, estimated cost, and agent trace.
+2. The Threat Intelligence Agent loads local seeds plus generated external threat-intel seeds.
+3. The Orchestrator selects high-priority seed cases.
+4. The Red Team Agent creates bounded variants.
+5. The target client sends payload sequences to the configured Clinical Co-Pilot endpoint.
+6. The Judge Agent issues `pass`, `fail`, or `partial` verdicts using versioned rubrics.
+7. The Documentation Agent writes markdown reports for `fail` and `partial` cases.
+8. The dashboard shows the review queue, coverage, estimated cost, and agent trace.
 
 ## Assignment Deliverables
 
@@ -120,6 +138,8 @@ That runs every Monday at 06:00 UTC. Weekly is recommended for the assignment be
 - `evals/`: seed cases and latest smoke campaign output.
 - `reports/`: vulnerability report queue.
 - `schemas/`: typed inter-agent message contracts.
+- `agentforge/data/threat_feeds/`: latest external threat feed snapshots.
+- `agentforge/data/generated_threat_cases.json`: generated Layer 1 seed cases.
 
 ## Target Integration Note
 

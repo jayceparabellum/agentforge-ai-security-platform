@@ -1,0 +1,92 @@
+[
+  {
+    "source": "OWASP LLM Top 10 2025",
+    "external_id": "LLM01",
+    "title": "Prompt Injection",
+    "summary": "Prompt Injection risk from OWASP LLM Top 10 2025. Source digest d8596f2c6b33.",
+    "url": "https://owasp.org/www-project-top-10-for-large-language-model-applications/assets/PDF/OWASP-Top-10-for-LLMs-v2025.pdf",
+    "category": "prompt_injection",
+    "fetched_at": "2026-05-12T05:15:50.333543Z"
+  },
+  {
+    "source": "OWASP LLM Top 10 2025",
+    "external_id": "LLM02",
+    "title": "Sensitive Information Disclosure",
+    "summary": "Sensitive Information Disclosure risk from OWASP LLM Top 10 2025. Source digest d8596f2c6b33.",
+    "url": "https://owasp.org/www-project-top-10-for-large-language-model-applications/assets/PDF/OWASP-Top-10-for-LLMs-v2025.pdf",
+    "category": "data_exfiltration",
+    "fetched_at": "2026-05-12T05:15:50.333572Z"
+  },
+  {
+    "source": "OWASP LLM Top 10 2025",
+    "external_id": "LLM03",
+    "title": "Supply Chain",
+    "summary": "Supply Chain risk from OWASP LLM Top 10 2025. Source digest d8596f2c6b33.",
+    "url": "https://owasp.org/www-project-top-10-for-large-language-model-applications/assets/PDF/OWASP-Top-10-for-LLMs-v2025.pdf",
+    "category": "tool_misuse",
+    "fetched_at": "2026-05-12T05:15:50.333578Z"
+  },
+  {
+    "source": "OWASP LLM Top 10 2025",
+    "external_id": "LLM04",
+    "title": "Data and Model Poisoning",
+    "summary": "Data and Model Poisoning risk from OWASP LLM Top 10 2025. Source digest d8596f2c6b33.",
+    "url": "https://owasp.org/www-project-top-10-for-large-language-model-applications/assets/PDF/OWASP-Top-10-for-LLMs-v2025.pdf",
+    "category": "state_corruption",
+    "fetched_at": "2026-05-12T05:15:50.333582Z"
+  },
+  {
+    "source": "OWASP LLM Top 10 2025",
+    "external_id": "LLM05",
+    "title": "Improper Output Handling",
+    "summary": "Improper Output Handling risk from OWASP LLM Top 10 2025. Source digest d8596f2c6b33.",
+    "url": "https://owasp.org/www-project-top-10-for-large-language-model-applications/assets/PDF/OWASP-Top-10-for-LLMs-v2025.pdf",
+    "category": "tool_misuse",
+    "fetched_at": "2026-05-12T05:15:50.333585Z"
+  },
+  {
+    "source": "OWASP LLM Top 10 2025",
+    "external_id": "LLM06",
+    "title": "Excessive Agency",
+    "summary": "Excessive Agency risk from OWASP LLM Top 10 2025. Source digest d8596f2c6b33.",
+    "url": "https://owasp.org/www-project-top-10-for-large-language-model-applications/assets/PDF/OWASP-Top-10-for-LLMs-v2025.pdf",
+    "category": "tool_misuse",
+    "fetched_at": "2026-05-12T05:15:50.333590Z"
+  },
+  {
+    "source": "OWASP LLM Top 10 2025",
+    "external_id": "LLM07",
+    "title": "System Prompt Leakage",
+    "summary": "System Prompt Leakage risk from OWASP LLM Top 10 2025. Source digest d8596f2c6b33.",
+    "url": "https://owasp.org/www-project-top-10-for-large-language-model-applications/assets/PDF/OWASP-Top-10-for-LLMs-v2025.pdf",
+    "category": "prompt_injection",
+    "fetched_at": "2026-05-12T05:15:50.333593Z"
+  },
+  {
+    "source": "OWASP LLM Top 10 2025",
+    "external_id": "LLM08",
+    "title": "Vector and Embedding Weaknesses",
+    "summary": "Vector and Embedding Weaknesses risk from OWASP LLM Top 10 2025. Source digest d8596f2c6b33.",
+    "url": "https://owasp.org/www-project-top-10-for-large-language-model-applications/assets/PDF/OWASP-Top-10-for-LLMs-v2025.pdf",
+    "category": "data_exfiltration",
+    "fetched_at": "2026-05-12T05:15:50.333597Z"
+  },
+  {
+    "source": "OWASP LLM Top 10 2025",
+    "external_id": "LLM09",
+    "title": "Misinformation",
+    "summary": "Misinformation risk from OWASP LLM Top 10 2025. Source digest d8596f2c6b33.",
+    "url": "https://owasp.org/www-project-top-10-for-large-language-model-applications/assets/PDF/OWASP-Top-10-for-LLMs-v2025.pdf",
+    "category": "identity_role",
+    "fetched_at": "2026-05-12T05:15:50.333601Z"
+  },
+  {
+    "source": "OWASP LLM Top 10 2025",
+    "external_id": "LLM10",
+    "title": "Unbounded Consumption",
+    "summary": "Unbounded Consumption risk from OWASP LLM Top 10 2025. Source digest d8596f2c6b33.",
+    "url": "https://owasp.org/www-project-top-10-for-large-language-model-applications/assets/PDF/OWASP-Top-10-for-LLMs-v2025.pdf",
+    "category": "denial_of_service",
+    "fetched_at": "2026-05-12T05:15:50.333605Z"
+  }
+]

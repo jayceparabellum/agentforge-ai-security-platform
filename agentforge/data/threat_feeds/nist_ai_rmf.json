@@ -1,0 +1,38 @@
+[
+  {
+    "source": "NIST AI RMF Generative AI Profile",
+    "external_id": "NIST-AI-600-1-MAP",
+    "title": "Map generative AI data and context boundaries",
+    "summary": "NIST AI 600-1 control-oriented seed. Source digest 6e73620ab6b6.",
+    "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.600-1.pdf",
+    "category": "data_exfiltration",
+    "fetched_at": "2026-05-12T05:15:52.795749Z"
+  },
+  {
+    "source": "NIST AI RMF Generative AI Profile",
+    "external_id": "NIST-AI-600-1-MEASURE",
+    "title": "Measure prompt and output safety failures",
+    "summary": "NIST AI 600-1 control-oriented seed. Source digest 6e73620ab6b6.",
+    "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.600-1.pdf",
+    "category": "prompt_injection",
+    "fetched_at": "2026-05-12T05:15:52.795778Z"
+  },
+  {
+    "source": "NIST AI RMF Generative AI Profile",
+    "external_id": "NIST-AI-600-1-MANAGE",
+    "title": "Manage misuse, overreliance, and incident response",
+    "summary": "NIST AI 600-1 control-oriented seed. Source digest 6e73620ab6b6.",
+    "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.600-1.pdf",
+    "category": "identity_role",
+    "fetched_at": "2026-05-12T05:15:52.795788Z"
+  },
+  {
+    "source": "NIST AI RMF Generative AI Profile",
+    "external_id": "NIST-AI-600-1-GOVERN",
+    "title": "Govern tool access and auditability",
+    "summary": "NIST AI 600-1 control-oriented seed. Source digest 6e73620ab6b6.",
+    "url": "https://nvlpubs.nist.gov/nistpubs/ai/NIST.AI.600-1.pdf",
+    "category": "tool_misuse",
+    "fetched_at": "2026-05-12T05:15:52.795795Z"
+  }
+]
