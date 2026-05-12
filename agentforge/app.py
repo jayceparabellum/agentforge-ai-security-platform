@@ -24,9 +24,11 @@ app = FastAPI(title="AgentForge AI Security Platform", version="0.1.0")
 @app.get("/health")
 async def health() -> dict:
     settings = get_settings()
-    target = TargetClient(settings)
-    target_health = await target.health()
-    return {"status": "ok", "target": target_health}
+    return {
+        "status": "ok",
+        "service": "agentforge-ai-security-platform",
+        "target_base_url": str(settings.target_base_url),
+    }
 
 
 @app.get("/api/target")
@@ -185,11 +187,12 @@ def index() -> str:
     <section>
       <h2>Campaign Controls</h2>
       <p>Target: <code>{get_settings().target_base_url}</code> | Cadence: <code>{get_settings().agentforge_campaign_cadence}</code> | Budget: <code>${get_settings().campaign_budget_usd}</code></p>
-      <button onclick="fetch('/api/campaigns/run?intensity=smoke', {{method:'POST'}}).then(() => location.reload())">Run Smoke Campaign</button>
-      <button onclick="fetch('/api/threat-intel/refresh', {{method:'POST'}}).then(() => location.reload())">Refresh Threat Intel</button>
-      <button onclick="fetch('/api/layer4/fuzz', {{method:'POST'}}).then(() => location.reload())">Run Fuzzer</button>
-      <button onclick="fetch('/api/layer4/regression', {{method:'POST'}}).then(() => location.reload())">Replay Regressions</button>
-      <button onclick="fetch('/api/target/probe', {{method:'POST'}}).then(() => location.reload())">Probe Target</button>
+      <button onclick="runControl('/api/campaigns/run?intensity=smoke', this)">Run Smoke Campaign</button>
+      <button onclick="runControl('/api/threat-intel/refresh', this)">Refresh Threat Intel</button>
+      <button onclick="runControl('/api/layer4/fuzz', this)">Run Fuzzer</button>
+      <button onclick="runControl('/api/layer4/regression', this)">Replay Regressions</button>
+      <button onclick="runControl('/api/target/probe', this)">Probe Target</button>
+      <span id="control-status" role="status"></span>
     </section>
     <section>
       <h2>Layer 5 Target System</h2>
@@ -239,6 +242,28 @@ def index() -> str:
       <ul>{events}</ul>
     </section>
   </main>
+  <script>
+    async function runControl(path, button) {{
+      const status = document.getElementById('control-status');
+      const original = button.textContent;
+      button.disabled = true;
+      button.textContent = 'Running...';
+      status.textContent = '';
+      try {{
+        const response = await fetch(path, {{method: 'POST'}});
+        if (!response.ok) {{
+          const text = await response.text();
+          throw new Error(`${{response.status}} ${{text.slice(0, 160)}}`);
+        }}
+        status.textContent = 'Complete. Refreshing...';
+        location.reload();
+      }} catch (error) {{
+        status.textContent = `Control failed: ${{error.message}}`;
+        button.disabled = false;
+        button.textContent = original;
+      }}
+    }}
+  </script>
 </body>
 </html>
 """
