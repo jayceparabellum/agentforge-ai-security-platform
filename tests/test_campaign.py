@@ -146,6 +146,11 @@ def test_token_budget_ledger_round_trip(tmp_path, monkeypatch):
     ledger = fetch_token_budget_ledger(campaign_id="campaign-test")
     assert ledger["entries"][0]["agent"] == "Red Team Agent"
     assert ledger["summary"][0]["estimated_tokens"] == 120
+    from agentforge.storage import fetch_dashboard
+
+    dashboard = fetch_dashboard()
+    assert dashboard["lifetime_coverage_cost_usd"] == 0.00006
+    assert dashboard["lifetime_coverage_tokens"] == 120
 
 
 def test_vulnerability_db_empty_shape(tmp_path, monkeypatch):

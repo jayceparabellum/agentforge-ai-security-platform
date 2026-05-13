@@ -449,6 +449,8 @@ def index() -> str:
         <div class="metric"><span>Fail</span><strong>{data['fail_count']}</strong></div>
         <div class="metric"><span>Partial</span><strong>{data['partial_count']}</strong></div>
         <div class="metric"><span>Estimated Cost</span><strong>${data['estimated_cost_usd']}</strong></div>
+        <div class="metric"><span>Total Coverage Cost Since Launch</span><strong>${data['lifetime_coverage_cost_usd']}</strong></div>
+        <div class="metric"><span>Coverage Tokens Since Launch</span><strong>{data['lifetime_coverage_tokens']}</strong></div>
         {categories}
       </div>
     </section>

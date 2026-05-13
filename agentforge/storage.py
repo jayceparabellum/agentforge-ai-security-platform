@@ -1021,6 +1021,12 @@ def fetch_dashboard() -> dict:
             "SELECT status, COUNT(*) AS count FROM human_approvals GROUP BY status ORDER BY status"
         ).fetchall()
         cost = conn.execute("SELECT COALESCE(SUM(cost_estimate_usd), 0) AS cost FROM attack_results").fetchone()["cost"]
+        lifetime_coverage_cost = conn.execute(
+            "SELECT COALESCE(SUM(estimated_cost_usd), 0) AS cost FROM token_budget_ledger"
+        ).fetchone()["cost"]
+        lifetime_coverage_tokens = conn.execute(
+            "SELECT COALESCE(SUM(estimated_tokens), 0) AS tokens FROM token_budget_ledger"
+        ).fetchone()["tokens"]
         last = conn.execute("SELECT campaign_id FROM events ORDER BY id DESC LIMIT 1").fetchone()
     verdict_counts = {row["verdict"]: row["count"] for row in verdict_rows}
     return {
@@ -1030,6 +1036,8 @@ def fetch_dashboard() -> dict:
         "partial_count": verdict_counts.get("partial", 0),
         "open_vulnerabilities": sum(1 for row in reports if row["status"] in {"open", "human_review"}),
         "estimated_cost_usd": round(float(cost), 4),
+        "lifetime_coverage_cost_usd": round(float(lifetime_coverage_cost), 6),
+        "lifetime_coverage_tokens": int(lifetime_coverage_tokens or 0),
         "last_campaign_id": last["campaign_id"] if last else None,
         "reports": [dict(row) for row in reports],
         "events": [dict(row) for row in events],
