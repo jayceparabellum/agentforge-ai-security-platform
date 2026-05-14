@@ -4,7 +4,7 @@ AgentForge is a deployable multi-agent adversarial evaluation platform for testi
 
 `https://clinical-copilot-0mgb.onrender.com`
 
-This is a separate application, not an external target fork. It runs authorized adversarial campaigns against an allowlisted target, records independent judge verdicts, generates reviewable vulnerability reports, and keeps uncertain or confirmed findings in a regression loop.
+This is a standalone application with its own repository and deployment boundary. It runs authorized adversarial campaigns against an allowlisted target, records independent judge verdicts, generates reviewable vulnerability reports, and keeps uncertain or confirmed findings in a regression loop.
 
 ## Current Build State
 

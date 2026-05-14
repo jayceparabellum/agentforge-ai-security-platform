@@ -1,7 +1,7 @@
 [project]
 name = "agentforge-ai-security-platform"
 version = "0.1.0"
-description = "Multi-agent adversarial evaluation platform for OpenEMR Clinical Co-Pilot"
+description = "Standalone multi-agent adversarial evaluation platform for an allowlisted external clinical AI target"
 requires-python = ">=3.9"
 dependencies = [
   "fastapi==0.115.6",
