@@ -389,9 +389,10 @@ def index() -> str:
     table {{ width: 100%; border-collapse: collapse; }}
     th {{ background: #edf3f8; color: #30475f; }}
     th, td {{ text-align: left; padding: 9px 8px; border: 1px solid #dbe3ec; font-size: 14px; vertical-align: top; }}
-    button, .button-link {{ background: var(--blue); color: white; border: 0; border-radius: 4px; padding: 9px 13px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; min-height: 20px; font-weight: 650; }}
+    button, .button-link {{ background: var(--blue); color: white; border: 0; border-radius: 4px; padding: 0 14px; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; min-height: 40px; height: 40px; font-weight: 650; font-size: 14px; line-height: 1; box-sizing: border-box; }}
     .control-row {{ display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }}
-    .secondary-control {{ background: #1f6f5b; }}
+    .control-row button, .control-row .button-link {{ min-width: 132px; }}
+    .secondary-control {{ background: var(--blue); }}
     .subtle {{ color: #526070; font-size: 13px; margin-top: 0; }}
     code {{ background: #eef2f7; padding: 2px 5px; border-radius: 4px; }}
     a {{ color: #1769aa; font-weight: 650; text-decoration: none; }}
