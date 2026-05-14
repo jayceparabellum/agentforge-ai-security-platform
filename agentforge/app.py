@@ -399,7 +399,7 @@ def index() -> str:
     .control-row {{ display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }}
     .secondary-control {{ background: #1f6f5b; }}
     .subtle {{ color: #526070; font-size: 13px; margin-top: 0; }}
-    .chat-panel {{ display: grid; gap: 12px; margin-top: 16px; padding-top: 14px; border-top: 1px solid #dbe3ec; }}
+    .chat-panel {{ display: grid; gap: 12px; }}
     .chat-form {{ display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }}
     .chat-form input {{ border: 1px solid #cfd8e3; border-radius: 4px; padding: 10px 12px; font: inherit; }}
     .chat-output {{ min-height: 78px; background: #f8fafc; border: 1px solid #dbe3ec; border-radius: 4px; padding: 12px; white-space: pre-wrap; }}
@@ -437,8 +437,10 @@ def index() -> str:
         <a class="button-link" href="/reports">Results</a>
       </div>
       <span id="control-status" role="status"></span>
+    </section>
+    <section id="chatbot-wrapper">
       <div class="chat-panel">
-        <h3>Architecture Chatbot Wrapper</h3>
+        <h2>Architecture Chatbot Wrapper</h2>
         <p class="subtle">Ask for approved architecture actions or platform state. Examples: <code>show budget</code>, <code>refresh threat intel</code>, <code>run fuzzer</code>, <code>show reports</code>, <code>explain architecture</code>.</p>
         <form class="chat-form" onsubmit="sendChat(event)">
           <input id="chat-input" name="message" placeholder="Ask the AI Security Tool..." autocomplete="off" />
