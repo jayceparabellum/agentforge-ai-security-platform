@@ -1,10 +1,10 @@
 # AgentForge AI Security Platform
 
-AgentForge is a deployable multi-agent adversarial evaluation platform for testing the deployed OpenEMR Clinical Co-Pilot target:
+AgentForge is a deployable multi-agent adversarial evaluation platform for testing the deployed external deployed Clinical Co-Pilot target target:
 
 `https://clinical-copilot-0mgb.onrender.com`
 
-This is a separate application, not an OpenEMR fork. It runs authorized adversarial campaigns against an allowlisted target, records independent judge verdicts, generates reviewable vulnerability reports, and keeps uncertain or confirmed findings in a regression loop.
+This is a separate application, not an external target fork. It runs authorized adversarial campaigns against an allowlisted target, records independent judge verdicts, generates reviewable vulnerability reports, and keeps uncertain or confirmed findings in a regression loop.
 
 ## Current Build State
 
@@ -16,7 +16,7 @@ This is a separate application, not an OpenEMR fork. It runs authorized adversar
 - Target system: `https://clinical-copilot-0mgb.onrender.com`.
 - Local verification: passed on the Mac mini.
 - Evaluation status: 50 golden safety cases with 100% suite readiness.
-- Smoke campaign: reached the deployed OpenEMR URL with HTTP 200 and generated six reviewable partial findings.
+- Smoke campaign: reached the external deployed target URL with HTTP 200 and generated six reviewable partial findings.
 - Target route: red-team payloads are sent only to the allowlisted Clinical Co-Pilot target URL with `TARGET_CHAT_PATH=/chat`.
 
 ## What It Does
@@ -31,7 +31,7 @@ This is a separate application, not an OpenEMR fork. It runs authorized adversar
 - Runs campaigns through an explicit Layer 2 multi-agent core with typed transition logging.
 - Records Layer 2 provider routes: Red Team through OpenRouter, Judge through direct Anthropic, Documentation configurable, and local fallback through Ollama.
 - Provides Layer 4 deterministic tooling: fuzzers and regression replay.
-- Provides Layer 5 target-system profiling and endpoint probing for the deployed OpenEMR application.
+- Provides Layer 5 target-system profiling and endpoint probing for the deployed external target application.
 - Provides Layer 6 observability with Langfuse-style traces and coverage dashboard state.
 - Provides Layer 7 critical-severity human approval gates.
 - Stores agent traces, attack results, verdicts, and report metadata in SQLite.
@@ -165,7 +165,7 @@ Target probing runs weekly before the campaign:
 schedule: "30 5 * * 1"
 ```
 
-It checks the allowlisted OpenEMR base URL plus likely Clinical Co-Pilot API paths, stores the target profile and probe results, and marks the integration as `healthy`, `partial`, or `unreachable`.
+It checks the allowlisted external target base URL plus likely Clinical Co-Pilot API paths, stores the target profile and probe results, and marks the integration as `healthy`, `partial`, or `unreachable`.
 
 ## Review Workflow
 

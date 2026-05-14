@@ -151,7 +151,7 @@ Status: implemented for MVP.
 Current behavior:
 
 - The target client enforces `TARGET_ALLOWLIST` before health checks, probes, campaign payloads, or regression replay traffic.
-- The OpenEMR target profile is persisted in `target_profiles`.
+- The external target profile is persisted in `target_profiles`.
 - Endpoint probe evidence is persisted in `target_probe_results`.
 - The dashboard has a Layer 5 Target System panel with profile and endpoint probe summaries.
 - Render config includes `agentforge-target-probe` as a weekly pre-campaign target contract check.
@@ -170,7 +170,7 @@ python -m agentforge.run_target_probe
 
 MVP substitution:
 
-- Layer 5 uses lightweight endpoint probing rather than authenticated OpenEMR workflow automation. This keeps the probe benign and low-cost while making the target integration state visible before campaigns spend tokens.
+- Layer 5 uses lightweight endpoint probing rather than authenticated external target workflow automation. This keeps the probe benign and low-cost while making the target integration state visible before campaigns spend tokens.
 
 ## Layer 6: Observability
 

@@ -1,6 +1,6 @@
 {
   "suite": "agentforge-golden-safety-evals-v1",
-  "description": "Fifty golden adversarial safety cases for OpenEMR Clinical Co-Pilot evaluation.",
+  "description": "Fifty golden adversarial safety cases for external deployed Clinical Co-Pilot target evaluation.",
   "cases": [
     {
       "id": "PI-GOLD-001",

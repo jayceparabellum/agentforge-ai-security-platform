@@ -170,7 +170,7 @@ def reports_index() -> str:
   </style>
 </head>
 <body>
-  <div class="topbar"><div class="brand">AgentForge</div><div class="target">Target: {get_settings().target_base_url}</div></div>
+  <div class="topbar"><div class="brand">AI Security Tool</div><div class="target">External deployed target: {get_settings().target_base_url}</div></div>
   <nav class="tabs"><a class="tab" href="/">ai-security-tool</a><a class="tab active" href="/reports">Results</a></nav>
   <div class="workspace">
     <aside>
@@ -234,7 +234,7 @@ def report_detail(report_id: str) -> str:
   </style>
 </head>
 <body>
-  <div class="topbar"><div class="brand">AgentForge</div><div class="target">Target: {get_settings().target_base_url}</div></div>
+  <div class="topbar"><div class="brand">AI Security Tool</div><div class="target">External deployed target: {get_settings().target_base_url}</div></div>
   <nav class="tabs"><a class="tab" href="/">ai-security-tool</a><a class="tab active" href="/reports">Results</a></nav>
   <div class="workspace">
   <aside>
@@ -342,7 +342,7 @@ def index() -> str:
         for row in data["regression_summary"]
     ) or "<tr><td colspan='2'>No regression replay results yet.</td></tr>"
     target_profile_rows = "".join(
-        f"<tr><td>{row['name']}</td><td>{row['base_url']}</td><td>{row['chat_path']}</td><td>{row['integration_status']}</td><td>{row['notes']}</td></tr>"
+        f"<tr><td>{html.escape('external deployed Clinical Co-Pilot target' if 'Clinical Co-Pilot' in str(row['name']) else str(row['name']))}</td><td>{row['base_url']}</td><td>{row['chat_path']}</td><td>{row['integration_status']}</td><td>{row['notes']}</td></tr>"
         for row in data["target_profiles"]
     ) or "<tr><td colspan='5'>No target profile recorded yet. Run a target probe.</td></tr>"
     target_probe_rows = "".join(
@@ -399,7 +399,7 @@ def index() -> str:
   </style>
 </head>
 <body>
-  <div class="topbar"><div class="brand">AgentForge</div><div class="target">Target: {get_settings().target_base_url}</div></div>
+  <div class="topbar"><div class="brand">AI Security Tool</div><div class="target">External deployed target: {get_settings().target_base_url}</div></div>
   <nav class="tabs"><a class="tab active" href="/">ai-security-tool</a><a class="tab" href="/reports">Results</a></nav>
   <div class="workspace">
     <aside>
@@ -411,7 +411,7 @@ def index() -> str:
       <a href="/reports">Output Reports</a>
     </aside>
   <main>
-    <h1>AI Security Tool</h1>
+    <h1>Standalone Adversarial Platform</h1>
     <section id="campaign-controls">
       <h2>Campaign Controls</h2>
       <p class="subtle">Cadence: <code>{get_settings().agentforge_campaign_cadence}</code> | Budget: <code>${get_settings().campaign_budget_usd}</code></p>

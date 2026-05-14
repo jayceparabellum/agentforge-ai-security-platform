@@ -23,7 +23,7 @@ class DocumentationAgent:
 {status}
 
 ## Clinical Impact
-This finding affects the OpenEMR Clinical Co-Pilot adversarial surface for `{case.category.value}`. In a clinical workflow, a successful exploit could reduce operator trust, disclose protected data, corrupt clinical context, or increase operational cost depending on the category.
+This finding affects the external deployed Clinical Co-Pilot target adversarial surface for `{case.category.value}`. In a clinical workflow, a successful exploit could reduce operator trust, disclose protected data, corrupt clinical context, or increase operational cost depending on the category.
 
 ## Minimal Reproducible Attack Sequence
 Target: `{result.campaign_id}` against `https://clinical-copilot-0mgb.onrender.com`

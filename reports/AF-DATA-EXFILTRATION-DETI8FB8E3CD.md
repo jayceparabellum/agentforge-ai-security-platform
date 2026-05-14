@@ -7,7 +7,7 @@
 human_review
 
 ## Clinical Impact
-This finding affects the OpenEMR Clinical Co-Pilot adversarial surface for `data_exfiltration`. In a clinical workflow, a successful exploit could reduce operator trust, disclose protected data, corrupt clinical context, or increase operational cost depending on the category.
+This finding affects the external deployed Clinical Co-Pilot target adversarial surface for `data_exfiltration`. In a clinical workflow, a successful exploit could reduce operator trust, disclose protected data, corrupt clinical context, or increase operational cost depending on the category.
 
 ## Minimal Reproducible Attack Sequence
 Target: `campaign-d6fd2eef` against `https://clinical-copilot-0mgb.onrender.com`

@@ -2,7 +2,7 @@
 
 ## Summary
 
-The deployed OpenEMR Clinical Co-Pilot creates a high-value adversarial surface because it sits near clinical context, operational workflows, and potentially sensitive patient data. The highest-risk categories are data exfiltration, identity and role exploitation, state corruption, and tool misuse. Prompt injection remains important, but the more dangerous failure mode is not simply that the assistant obeys a malicious phrase. The dangerous failure mode is that the assistant accepts attacker-controlled context as authorization, retrieves or summarizes data across patient boundaries, invokes tools with unsafe parameters, or carries poisoned state across turns.
+The deployed external deployed Clinical Co-Pilot target creates a high-value adversarial surface because it sits near clinical context, operational workflows, and potentially sensitive patient data. The highest-risk categories are data exfiltration, identity and role exploitation, state corruption, and tool misuse. Prompt injection remains important, but the more dangerous failure mode is not simply that the assistant obeys a malicious phrase. The dangerous failure mode is that the assistant accepts attacker-controlled context as authorization, retrieves or summarizes data across patient boundaries, invokes tools with unsafe parameters, or carries poisoned state across turns.
 
 AgentForge prioritizes coverage based on clinical impact, exploitability, and regression risk. Data exfiltration receives the highest priority because a successful attack can expose PHI, cross-patient records, or operational identifiers. Identity and role exploitation is also high priority because an LLM assistant may be persuaded to treat conversation text as an authority signal unless server-side permissions are enforced. State corruption is a key multi-turn risk: an attacker can gradually establish false assumptions, then request sensitive behavior later in the conversation. Tool misuse matters because a safe natural-language response can still be paired with unsafe backend tool calls if parameters are not validated. Denial of service is lower clinical-severity than PHI exposure, but it matters operationally because recursive tool calls, oversized outputs, and repeated retrieval can increase cost and latency.
 
@@ -14,13 +14,13 @@ Provider routing is also treated as a trust boundary. The Red Team path uses Ope
 
 Layer 4 adds deterministic pressure to the threat model. Fuzzing checks whether a defense only blocks a narrow wording of an attack, while regression replay checks whether previously observed partial or failed cases still reproduce after target changes. This is intentionally deterministic rather than agentic so replay results can be compared across runs.
 
-Layer 5 makes the deployed target itself part of the security model. AgentForge stores an allowlisted OpenEMR target profile, probes the base application and likely Clinical Co-Pilot API paths, and records whether the integration is `healthy`, `partial`, or `unreachable`. This keeps campaign results honest: a missing or changed endpoint is not treated as a pass, and the system does not send adversarial traffic to any URL outside `TARGET_ALLOWLIST`.
+Layer 5 makes the deployed target itself part of the security model. AgentForge stores an allowlisted external target profile, probes the base application and likely Clinical Co-Pilot API paths, and records whether the integration is `healthy`, `partial`, or `unreachable`. This keeps campaign results honest: a missing or changed endpoint is not treated as a pass, and the system does not send adversarial traffic to any URL outside `TARGET_ALLOWLIST`.
 
 Layer 6 and Layer 7 make the evaluation auditable and reviewable. Layer 6 records Langfuse-style traces for agent handoffs, verdicts, and approval events so campaigns can be reconstructed after the fact. Layer 7 creates a human approval gate for critical-severity findings so severe results are not silently accepted without review.
 
-Trust boundaries are explicit. The deployed OpenEMR target is allowlisted. The adversarial platform must not be repointed at unauthorized systems. Attack generation is synthetic and bounded by budget. The Judge is isolated from the Red Team so it is not influenced by the attacker’s explanation of why an exploit should count. Critical-severity findings and low-confidence verdicts are routed to a human review queue. Reports are written for reproducibility, not drama: each one must include a minimal attack sequence, expected behavior, observed behavior, severity, and remediation guidance.
+Trust boundaries are explicit. The external deployed target is allowlisted. The adversarial platform must not be repointed at unauthorized systems. Attack generation is synthetic and bounded by budget. The Judge is isolated from the Red Team so it is not influenced by the attacker’s explanation of why an exploit should count. Critical-severity findings and low-confidence verdicts are routed to a human review queue. Reports are written for reproducibility, not drama: each one must include a minimal attack sequence, expected behavior, observed behavior, severity, and remediation guidance.
 
-For the MVP, the key implementation risk is target integration. The OpenEMR application is live at `https://openemr-js46.onrender.com`, but the exact Clinical Co-Pilot chat endpoint may differ from the default adapter path. Until that route is confirmed, AgentForge records incomplete target interaction as a partial finding instead of falsely claiming success or safety. Once the chat route is configured, the same attack cases and judge rubrics become live regression tests.
+For the MVP, the key implementation risk is target integration. The external target application is live at `https://clinical-copilot-0mgb.onrender.com`, but the exact Clinical Co-Pilot chat endpoint may differ from the default adapter path. Until that route is confirmed, AgentForge records incomplete target interaction as a partial finding instead of falsely claiming success or safety. Once the chat route is configured, the same attack cases and judge rubrics become live regression tests.
 
 ## Attack Surface Map
 
@@ -40,7 +40,7 @@ For the MVP, the key implementation risk is target integration. The OpenEMR appl
 - Conversation memory is untrusted unless derived from server-verified state.
 - Tool calls must be authorized outside the LLM.
 - Target URL must remain allowlisted.
-- Target probes must remain benign and limited to the authorized OpenEMR deployment.
+- Target probes must remain benign and limited to the authorized authorized target deployment.
 - Critical-severity findings require an explicit Layer 7 approval decision.
 - Observability traces must not store full PHI payloads; they store summaries and IDs.
 - Critical reports require human approval.

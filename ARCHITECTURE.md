@@ -2,9 +2,9 @@
 
 ## Executive Summary
 
-AgentForge is a separate adversarial security platform built to continuously evaluate the deployed OpenEMR Clinical Co-Pilot at `https://clinical-copilot-0mgb.onrender.com`. The MVP is now deployed on Render through Blueprint `exs-d81aqof7f7vs73dfgng0`, with two live services: the `agentforge-ai-security-platform` web dashboard/API and the `agentforge-weekly-campaign` scheduled campaign runner. The active deployment source is the GitHub repository `jayceparabellum/agentforge-ai-security-platform`; the Gauntlet GitLab remote remains documented, but it is not the active Render source because GitLab authentication for that self-hosted host was not available during deployment.
+AgentForge is a separate adversarial security platform built to continuously evaluate the deployed external deployed Clinical Co-Pilot target at `https://clinical-copilot-0mgb.onrender.com`. The MVP is now deployed on Render through Blueprint `exs-d81aqof7f7vs73dfgng0`, with two live services: the `agentforge-ai-security-platform` web dashboard/API and the `agentforge-weekly-campaign` scheduled campaign runner. The active deployment source is the GitHub repository `jayceparabellum/agentforge-ai-security-platform`; the Gauntlet GitLab remote remains documented, but it is not the active Render source because GitLab authentication for that self-hosted host was not available during deployment.
 
-The platform is designed around the core requirement from the assignment: this cannot be a static prompt list, a one-time penetration test, or a single-agent script. AgentForge separates adversarial testing into distinct agents with distinct contexts, trust levels, and outputs so the system can discover, evaluate, document, and regression-test vulnerabilities without letting one role compromise another. The currently deployed MVP has already run smoke campaigns from both the Mac mini development environment and the Render-launched application. Those campaigns reached the deployed OpenEMR target, verified that the target returned HTTP 200, exercised six attack categories, and populated the review queue with reportable findings.
+The platform is designed around the core requirement from the assignment: this cannot be a static prompt list, a one-time penetration test, or a single-agent script. AgentForge separates adversarial testing into distinct agents with distinct contexts, trust levels, and outputs so the system can discover, evaluate, document, and regression-test vulnerabilities without letting one role compromise another. The currently deployed MVP has already run smoke campaigns from both the Mac mini development environment and the Render-launched application. Those campaigns reached the external deployed target, verified that the target returned HTTP 200, exercised six attack categories, and populated the review queue with reportable findings.
 
 The architecture has five agent roles. The Threat Intelligence Agent is scheduled and mostly deterministic. It loads seed techniques from trusted sources such as OWASP LLM Top 10, MITRE ATLAS, NIST AI RMF, NVD CVE 2.0, MITRE CVE List, CISA Known Exploited Vulnerabilities, GitHub Advisory Database, and OSV.dev, then normalizes relevant techniques into structured attack templates. The Orchestrator Agent reads the coverage map, open findings, regression status, and budget ledger to decide what the Red Team Agent should test next. The Red Team Agent generates and mutates adversarial inputs, including multi-turn sequences, but it cannot decide whether its own attack succeeded. The Judge Agent independently evaluates the target response against versioned rubrics and returns structured verdicts. The Documentation Agent converts confirmed or uncertain findings into reproducible vulnerability reports for human review.
 
@@ -34,7 +34,7 @@ The deployed Clinical Co-Pilot application is reachable, and the current default
 | Layer 2 behavior | Runs campaigns through `MultiAgentCore` graph version `layer2-langgraph-provider-routes-v2` and records typed transitions with provider/data-hop metadata |
 | Layer 3 behavior | Persists vulnerability DB, coverage map, and token budget ledger in SQLite shared state |
 | Layer 4 behavior | Deterministic fuzzers generate prompt variants and regression replay reruns confirmed/partial findings |
-| Layer 5 behavior | Maintains the allowlisted OpenEMR target profile, probes likely endpoint paths, and records whether the deployed target integration is healthy, partial, or unreachable |
+| Layer 5 behavior | Maintains the allowlisted external target profile, probes likely endpoint paths, and records whether the deployed target integration is healthy, partial, or unreachable |
 | Layer 6 behavior | Records Langfuse-style traces and exposes coverage, verdict, and transition summaries |
 | Layer 7 behavior | Opens explicit human approval gates for critical-severity findings |
 | Eval behavior | Ships a 50-case golden adversarial safety suite with category coverage, quality gates, and `/api/evals/progress` |
@@ -258,7 +258,7 @@ That runs after the weekly campaign window and provides a deterministic signal a
 
 ## Layer 5 Target System
 
-Layer 5 is now represented in code as an explicit target-system layer rather than an implicit URL string. The target client enforces `TARGET_ALLOWLIST` before any health check, probe, campaign, or replay sends traffic. This keeps AgentForge scoped to the authorized deployed OpenEMR application:
+Layer 5 is now represented in code as an explicit target-system layer rather than an implicit URL string. The target client enforces `TARGET_ALLOWLIST` before any health check, probe, campaign, or replay sends traffic. This keeps AgentForge scoped to the authorized deployed external target application:
 
 ```text
 https://clinical-copilot-0mgb.onrender.com
@@ -269,7 +269,7 @@ The target layer persists two kinds of shared state:
 - `target_profiles`: base URL, configured chat path, host, allowlist status, integration status, notes, and last update time.
 - `target_probe_results`: endpoint probe attempts, method, path, status code, reachability, likely chat-endpoint signal, response excerpt, error, and timestamp.
 
-The target probe is intentionally lightweight and low-cost. It performs GET checks against known OpenEMR/API surface paths and benign POST probes against likely Clinical Co-Pilot chat paths. It never sends PHI. Its job is to answer a deployment question before the Red Team spends tokens: is the target reachable, and does any candidate chat endpoint appear to accept the AgentForge message contract?
+The target probe is intentionally lightweight and low-cost. It performs GET checks against known target/API surface paths and benign POST probes against likely Clinical Co-Pilot chat paths. It never sends PHI. Its job is to answer a deployment question before the Red Team spends tokens: is the target reachable, and does any candidate chat endpoint appear to accept the AgentForge message contract?
 
 Layer 5 is exposed through:
 
@@ -285,7 +285,7 @@ Render includes a weekly `agentforge-target-probe` job:
 schedule: "30 5 * * 1"
 ```
 
-This runs before the weekly campaign. If the base OpenEMR URL is reachable but no chat endpoint is confirmed, the integration is marked `partial`. That mirrors the current known deployment state and prevents the dashboard from pretending that a missing endpoint is the same thing as a safe target response.
+This runs before the weekly campaign. If the base external target URL is reachable but no chat endpoint is confirmed, the integration is marked `partial`. That mirrors the current known deployment state and prevents the dashboard from pretending that a missing endpoint is the same thing as a safe target response.
 
 ## Shared State Data Layer
 

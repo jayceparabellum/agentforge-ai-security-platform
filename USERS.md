@@ -38,6 +38,6 @@ The assignment's problem is continuous adversarial evaluation, not a one-time de
 
 ## Current UX Notes
 
-- The web app uses an OpenEMR-style operational shell with a blue top bar, left navigation, and two main tabs.
+- The web app uses an clinical operations-style shell with a blue top bar, left navigation, and two main tabs.
 - Report links are backed by the SQLite vulnerability database and by checked-in markdown artifacts in `reports/`, so demo reviewers can still open reports after a Render redeploy recreates runtime database state.
 - Eval progress is deterministic and token-free, so it can run during development, CI, or demo preparation without provider credentials.

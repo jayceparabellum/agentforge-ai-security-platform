@@ -138,7 +138,7 @@ class RegressionReplayResult(BaseModel):
 
 
 class TargetProfile(BaseModel):
-    name: str = "OpenEMR Clinical Co-Pilot"
+    name: str = "external deployed Clinical Co-Pilot target"
     base_url: str
     chat_path: str
     allowlisted: bool
