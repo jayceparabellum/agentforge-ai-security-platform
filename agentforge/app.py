@@ -8,6 +8,7 @@ from fastapi.responses import HTMLResponse
 
 from agentforge.agents.threat_intel import ThreatIntelAgent
 from agentforge.campaign import run_campaign
+from agentforge.chatbot import ChatRequest, ChatResponse, handle_chat
 from agentforge.config import get_settings
 from agentforge.deterministic import run_fuzzer, run_regression_replay
 from agentforge.evaluation import evaluate_golden_cases
@@ -52,6 +53,11 @@ async def target_probe() -> dict:
 @app.get("/api/dashboard")
 def dashboard_api() -> dict:
     return fetch_dashboard()
+
+
+@app.post("/api/chat", response_model=ChatResponse)
+async def chat(request: ChatRequest) -> ChatResponse:
+    return await handle_chat(request)
 
 
 @app.get("/api/evals/progress")
@@ -393,6 +399,12 @@ def index() -> str:
     .control-row {{ display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }}
     .secondary-control {{ background: #1f6f5b; }}
     .subtle {{ color: #526070; font-size: 13px; margin-top: 0; }}
+    .chat-panel {{ display: grid; gap: 12px; margin-top: 16px; padding-top: 14px; border-top: 1px solid #dbe3ec; }}
+    .chat-form {{ display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; }}
+    .chat-form input {{ border: 1px solid #cfd8e3; border-radius: 4px; padding: 10px 12px; font: inherit; }}
+    .chat-output {{ min-height: 78px; background: #f8fafc; border: 1px solid #dbe3ec; border-radius: 4px; padding: 12px; white-space: pre-wrap; }}
+    .chat-actions {{ display: flex; flex-wrap: wrap; gap: 8px; }}
+    .chat-actions button {{ background: #eef6fc; color: #1769aa; border: 1px solid #b9d8ee; }}
     code {{ background: #eef2f7; padding: 2px 5px; border-radius: 4px; }}
     a {{ color: #1769aa; font-weight: 650; text-decoration: none; }}
     @media (max-width: 760px) {{ .workspace {{ grid-template-columns: 1fr; }} aside {{ display: none; }} .topbar {{ align-items: flex-start; flex-direction: column; height: auto; gap: 4px; padding: 12px 18px; }} }}
@@ -425,6 +437,21 @@ def index() -> str:
         <a class="button-link" href="/reports">Results</a>
       </div>
       <span id="control-status" role="status"></span>
+      <div class="chat-panel">
+        <h3>Architecture Chatbot Wrapper</h3>
+        <p class="subtle">Ask for approved architecture actions or platform state. Examples: <code>show budget</code>, <code>refresh threat intel</code>, <code>run fuzzer</code>, <code>show reports</code>, <code>explain architecture</code>.</p>
+        <form class="chat-form" onsubmit="sendChat(event)">
+          <input id="chat-input" name="message" placeholder="Ask the AI Security Tool..." autocomplete="off" />
+          <button type="submit">Send</button>
+        </form>
+        <div class="chat-actions">
+          <button type="button" onclick="quickChat('show reports')">Reports</button>
+          <button type="button" onclick="quickChat('show budget')">Budget</button>
+          <button type="button" onclick="quickChat('show observability')">Observability</button>
+          <button type="button" onclick="quickChat('explain architecture')">Architecture</button>
+        </div>
+        <div id="chat-output" class="chat-output" role="status">Ready for an approved architecture command.</div>
+      </div>
     </section>
     <section id="target-system">
       <h2>Target System</h2>
@@ -504,6 +531,40 @@ def index() -> str:
         status.textContent = `Control failed: ${{error.message}}`;
         button.disabled = false;
         button.textContent = original;
+      }}
+    }}
+    async function sendChat(event) {{
+      event.preventDefault();
+      const input = document.getElementById('chat-input');
+      await submitChat(input.value);
+    }}
+    async function quickChat(message) {{
+      document.getElementById('chat-input').value = message;
+      await submitChat(message);
+    }}
+    async function submitChat(message) {{
+      const output = document.getElementById('chat-output');
+      const input = document.getElementById('chat-input');
+      if (!message.trim()) {{
+        output.textContent = 'Enter a command first.';
+        return;
+      }}
+      output.textContent = 'Working...';
+      try {{
+        const response = await fetch('/api/chat', {{
+          method: 'POST',
+          headers: {{'Content-Type': 'application/json'}},
+          body: JSON.stringify({{message}})
+        }});
+        if (!response.ok) {{
+          const text = await response.text();
+          throw new Error(`${{response.status}} ${{text.slice(0, 160)}}`);
+        }}
+        const data = await response.json();
+        output.textContent = `${{data.answer}}\\n\\nIntent: ${{data.intent}}`;
+        input.value = '';
+      }} catch (error) {{
+        output.textContent = `Chat command failed: ${{error.message}}`;
       }}
     }}
   </script>

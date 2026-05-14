@@ -20,6 +20,7 @@ from agentforge.storage import (
 )
 from agentforge.models import LangfuseTrace, TokenBudgetEntry, Verdict, VulnerabilityReport
 from agentforge.config import get_settings
+from agentforge.chatbot import ChatRequest, handle_chat
 from agentforge.deterministic import DeterministicFuzzer, run_fuzzer
 from agentforge.evaluation import evaluate_golden_cases, load_golden_cases
 from agentforge.storage import fetch_layer4_state
@@ -346,3 +347,33 @@ def test_golden_eval_suite_has_50_ready_cases():
         "denial_of_service",
         "identity_role",
     }
+
+
+def test_chatbot_retrieves_budget_state(tmp_path, monkeypatch):
+    monkeypatch.setenv("DATABASE_PATH", str(tmp_path / "agentforge-chat-budget.db"))
+    get_settings.cache_clear()
+    record_budget_entry(
+        TokenBudgetEntry(
+            campaign_id="campaign-chat",
+            agent="Orchestrator Agent",
+            action="plan_campaign",
+            estimated_tokens=250,
+            estimated_cost_usd=0.000125,
+            budget_usd=2.5,
+        )
+    )
+    import anyio
+
+    response = anyio.run(handle_chat, ChatRequest(message="show budget"))
+    assert response.intent == "retrieve_budget"
+    assert "Lifetime coverage cost" in response.answer
+    assert response.data["dashboard"]["lifetime_coverage_tokens"] == 250
+
+
+def test_chatbot_explains_architecture():
+    import anyio
+
+    response = anyio.run(handle_chat, ChatRequest(message="explain architecture"))
+    assert response.intent == "explain_architecture"
+    assert "standalone adversarial harness" in response.answer
+    assert "run smoke campaign" in response.actions
