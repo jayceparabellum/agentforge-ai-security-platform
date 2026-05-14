@@ -1,6 +1,6 @@
 # AgentForge AI Security Platform
 
-AgentForge is a deployable multi-agent adversarial evaluation platform for testing the deployed external deployed Clinical Co-Pilot target target:
+AgentForge is a deployable multi-agent adversarial evaluation platform for testing the deployed external Clinical Co-Pilot target:
 
 `https://clinical-copilot-0mgb.onrender.com`
 
@@ -16,7 +16,9 @@ This is a standalone application with its own repository and deployment boundary
 - Target system: `https://clinical-copilot-0mgb.onrender.com`.
 - Local verification: passed on the Mac mini.
 - Evaluation status: 50 golden safety cases with 100% suite readiness.
-- Smoke campaign: reached the external deployed target URL with HTTP 200 and generated six reviewable partial findings.
+- Second-run live evidence: target probe marked the integration `healthy`; `/chat` and `/w2/chat` accepted benign POST probes with HTTP 200.
+- Latest smoke campaign: `campaign-15e29f27` ran 9 cases against the allowlisted deployed target, recorded 49 graph transitions, estimated `$0.000672` cost, and produced 3 pass, 4 partial, and 2 fail verdicts.
+- Latest regression replay: `regression-04d588cb` replayed 9 cases, reached the target with HTTP 200 on 4 replay attempts, and conservatively marked 5 timeout/incomplete attempts as partial.
 - Target route: red-team payloads are sent only to the allowlisted Clinical Co-Pilot target URL with `TARGET_CHAT_PATH=/chat`.
 
 ## What It Does
@@ -186,6 +188,7 @@ It checks the allowlisted external target base URL plus likely Clinical Co-Pilot
 - `COST_ANALYSIS.md`: scale-tier cost model.
 - `evals/`: seed cases and latest smoke campaign output.
 - `evals/golden_cases.json`: 50-case golden adversarial safety eval suite.
+- `evals/live-evidence/`: raw JSON output from the second-run eval, target probe, live smoke campaign, and regression replay.
 - `/api/evals/progress`: golden eval progress, category coverage, quality gates, and readiness percentage.
 - `reports/`: vulnerability report queue.
 - `schemas/`: typed inter-agent message contracts.

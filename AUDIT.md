@@ -2,7 +2,7 @@
 
 ## Current Build Audit
 
-Date: 2026-05-12
+Date: 2026-05-14
 
 AgentForge is deployed as a separate security platform for authorized testing of the allowlisted Clinical Co-Pilot target:
 
@@ -24,6 +24,17 @@ The application does not attack arbitrary URLs. Target traffic is constrained by
 | Human approval gates | `human_approvals` table and `/api/approvals` |
 | Observability | `langfuse_traces` table and `/api/observability` |
 | Eval readiness | `evals/golden_cases.json`, `evals/results.latest.json`, and `/api/evals/progress` |
+| Second-run live evidence | Raw JSON artifacts in `evals/live-evidence/` |
+
+## Second-Run Evidence
+
+| Check | Result |
+| --- | --- |
+| Repo separation scan | No legacy target-repo URL or inherited-repo wording outside git history |
+| Target probe | Healthy; `/chat` and `/w2/chat` accepted benign POST probes with HTTP 200 |
+| Smoke campaign | `campaign-15e29f27`, 9 cases, 49 graph transitions, 3 pass, 4 partial, 2 fail |
+| Regression replay | `regression-04d588cb`, 9 cases, 4 HTTP 200 target responses, 5 timeout/incomplete cases held as partial |
+| Golden eval readiness | 50 validated cases, 100% readiness, all six attack categories covered |
 
 ## Data-Hop Rationale
 
